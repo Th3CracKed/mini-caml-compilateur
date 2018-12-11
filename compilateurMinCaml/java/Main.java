@@ -1,13 +1,16 @@
 import EXEMPLESASUPPRIMER.*;
 import arbresyntaxique.*;
+import frontend.KNormVisitor;
+import frontend.VisiteurAlphaNorm;
 import visiteur.*;
 import java.io.*;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import util.*;
 
 public class Main {
         private static final int CODE_RETOUR_ERREUR = 1;
-        
   static public void main(String argv[]) {   
       try
       {
@@ -20,6 +23,7 @@ public class Main {
                     case "-o":
                         i++;
                         nomFichierSortie = argv[i];
+                        throw new NotYetImplementedException();
                     case "-h":
                         System.out.println("-o : output file\n" +
                                 "-h : display help\n" +
@@ -51,13 +55,33 @@ public class Main {
                 }
                 optionsDejaRencontrees.add(argv[i]);
             }
-            nomFichierEntree = "rsc\\mincaml\\gcd.ml";
+            
+            nomFichierEntree = "rsc/tests/knormalisation/valid/knormAdd.ml";
 
-            /*Parser p = new Parser(new Lexer(new FileReader(nomFichierEntree)));
+            Parser p = null;
+            try
+            {
+                p = new Parser(new Lexer(new FileReader(nomFichierEntree)));
+            }
+            catch(FileNotFoundException e)
+            {
+                throw new RuntimeException("Le fichier à compiler n'existe pas");
+            }
             Exp expression = (Exp) p.parse().value;      
             assert (expression != null);
 
-            System.out.println("------ AST ------");
+            System.out.println("------ ENTREE ------");
+            expression.accept(new PrintVisitor());
+            System.out.println();
+            System.out.println("------ PROGRAMME KNORMALISE ------");
+            expression = expression.accept(new KNormVisitor());
+            expression.accept(new PrintVisitor());
+            System.out.println();            
+            /*System.out.println("------ PROGRAMME ALPHANORMALISEE (APRES ETAPES PRECEDENTES)  ------");
+            expression = expression.accept(new VisiteurAlphaNorm());
+            expression.accept(new PrintVisitor());
+            System.out.println();   */
+            /*System.out.println("------ AST ------");
             expression.accept(new PrintVisitor());
             System.out.println();
 
@@ -71,7 +95,14 @@ public class Main {
       }
       catch(Exception e)
       {
-          System.err.println(e.getMessage());
+          if(e.getMessage() == null || e.getMessage().isEmpty())
+          {
+            System.err.println("Exception "+e.getClass().getName()+" levée");
+          }
+          else
+          {
+              System.err.println(e.getMessage());
+          }
           System.exit(CODE_RETOUR_ERREUR);
       }      
   }
