@@ -1,57 +1,32 @@
 package frontend;
 
-import arbresyntaxique.Add;
-import arbresyntaxique.App;
-import arbresyntaxique.Array;
-import arbresyntaxique.Bool;
-import arbresyntaxique.Eq;
-import arbresyntaxique.Exp;
-import arbresyntaxique.FAdd;
-import arbresyntaxique.FDiv;
-import arbresyntaxique.FMul;
-import arbresyntaxique.FNeg;
-import arbresyntaxique.FSub;
-import arbresyntaxique.Float;
-import arbresyntaxique.Get;
-import arbresyntaxique.Id;
-import arbresyntaxique.If;
-import arbresyntaxique.Int;
-import arbresyntaxique.LE;
-import arbresyntaxique.Let;
-import arbresyntaxique.LetRec;
-import arbresyntaxique.LetTuple;
-import arbresyntaxique.Neg;
-import arbresyntaxique.Not;
-import arbresyntaxique.OperateurBinaire;
-import arbresyntaxique.OperateurUnaire;
-import arbresyntaxique.Put;
-import arbresyntaxique.Sub;
-import arbresyntaxique.Tuple;
-import arbresyntaxique.Type;
-import arbresyntaxique.Unit;
-import arbresyntaxique.Var;
+import arbremincaml.*;
+import java.util.LinkedList;
 import util.NotYetImplementedException;
-import visiteur.ObjVisitor;
+import visiteur.ObjVisitorExp;
 
-public class KNormVisitor implements ObjVisitor<Exp> {
+public class KNormVisitor extends ObjVisitorExp {
 
-    @Override
-    public Unit visit(Unit e) {
-        return e;
+    @Override    
+    public Let visit(App e)
+    {
+        LinkedList<Exp> vars = new LinkedList<>();
+        Var varFonction = new Var(Id.gen());
+        for(int i = 0 ; i < e.getEs().size() ; i++)
+        {
+            vars.add(new Var(Id.gen()));
+        }
+        Exp resultat = new App(varFonction, vars);
+        for(int i = 0 ; i < e.getEs().size() ; i++)
+        {
+            resultat = new Let(((Var)vars.get(i)).getId(), Type.gen(), e.getEs().get(i).accept(this), resultat);
+        }
+        return new Let(varFonction.getId(), Type.gen(), e.getE().accept(this), resultat);
     }
-
+    
+    
     @Override
-    public Bool visit(Bool e) {
-        return e;
-    }
-
-    @Override
-    public Int visit(Int e) {
-        return e;
-    }
-
-    @Override
-    public Float visit(Float e) { 
+    public FloatMinCaml visit(FloatMinCaml e) { 
         throw new NotYetImplementedException();
         //return e;
     }
@@ -145,31 +120,6 @@ public class KNormVisitor implements ObjVisitor<Exp> {
     }
 
     @Override
-    public Exp visit(FNeg e){
-      throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Let visit(FAdd e){
-       throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Let visit(FSub e){
-        throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Let visit(FMul e) {
-       throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Let visit(FDiv e){
-        throw new NotYetImplementedException();
-    }
-
-    @Override
     public Let visit(Eq e){
         CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
         return result.creerNoeud(new Eq(result.getNewVar1(), result.getNewVar2()));
@@ -188,48 +138,6 @@ public class KNormVisitor implements ObjVisitor<Exp> {
         Exp e2 = e.getE2().accept(this);
         Exp e3 = e.getE3().accept(this);
         return new If(e1, e2, e3);*/
-    }
-
-    @Override
-    public Let visit(Let e) {
-      Exp e1 = e.getE1().accept(this);
-      Exp e2 = e.getE2().accept(this);
-      return new Let(e.getId(), e.getT(), e1, e2);
-    }
-
-    @Override
-    public Var visit(Var e){
-        return e;
-    }
-
-    @Override
-    public Exp visit(LetRec e){
-       throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Exp visit(App e){
-        throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Tuple visit(Tuple e){
-       throw new NotYetImplementedException();
-    }
-
-    @Override
-    public LetTuple visit(LetTuple e){
-        throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Let visit(Array e){
-        throw new NotYetImplementedException();
-   }
-
-    @Override
-    public Let visit(Get e){
-        throw new NotYetImplementedException();
     }
 
     @Override

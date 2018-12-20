@@ -1,32 +1,32 @@
 package EXEMPLESASUPPRIMER;
 
-import arbresyntaxique.Add;
-import arbresyntaxique.App;
-import arbresyntaxique.Array;
-import arbresyntaxique.Bool;
-import arbresyntaxique.Eq;
-import arbresyntaxique.Exp;
-import arbresyntaxique.FAdd;
-import arbresyntaxique.FDiv;
-import arbresyntaxique.FMul;
-import arbresyntaxique.FNeg;
-import arbresyntaxique.FSub;
-import arbresyntaxique.Float;
-import arbresyntaxique.Get;
-import arbresyntaxique.Id;
-import arbresyntaxique.If;
-import arbresyntaxique.Int;
-import arbresyntaxique.LE;
-import arbresyntaxique.Let;
-import arbresyntaxique.LetRec;
-import arbresyntaxique.LetTuple;
-import arbresyntaxique.Neg;
-import arbresyntaxique.Not;
-import arbresyntaxique.Put;
-import arbresyntaxique.Sub;
-import arbresyntaxique.Tuple;
-import arbresyntaxique.Unit;
-import arbresyntaxique.Var;
+import arbremincaml.Add;
+import arbremincaml.App;
+import arbremincaml.Array;
+import arbremincaml.Bool;
+import arbremincaml.Eq;
+import arbremincaml.Exp;
+import arbremincaml.FAdd;
+import arbremincaml.FDiv;
+import arbremincaml.FMul;
+import arbremincaml.FNeg;
+import arbremincaml.FSub;
+import arbremincaml.FloatMinCaml;
+import arbremincaml.Get;
+import arbremincaml.Id;
+import arbremincaml.If;
+import arbremincaml.Int;
+import arbremincaml.LE;
+import arbremincaml.Let;
+import arbremincaml.LetRec;
+import arbremincaml.LetTuple;
+import arbremincaml.Neg;
+import arbremincaml.Not;
+import arbremincaml.Put;
+import arbremincaml.Sub;
+import arbremincaml.Tuple;
+import arbremincaml.Unit;
+import arbremincaml.Var;
 import java.util.*;
 import visiteur.ObjVisitor;
 
@@ -48,7 +48,7 @@ class VarVisitor implements ObjVisitor<Set<String>> {
     }
 
     @Override
-    public Set<String> visit(Float e) { 
+    public Set<String> visit(FloatMinCaml e) { 
         return new HashSet<>();
     }
 

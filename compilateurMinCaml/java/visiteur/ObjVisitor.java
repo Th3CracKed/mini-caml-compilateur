@@ -1,37 +1,12 @@
 package visiteur;
 
-import arbresyntaxique.Add;
-import arbresyntaxique.App;
-import arbresyntaxique.Array;
-import arbresyntaxique.Bool;
-import arbresyntaxique.Eq;
-import arbresyntaxique.FAdd;
-import arbresyntaxique.FDiv;
-import arbresyntaxique.FMul;
-import arbresyntaxique.FNeg;
-import arbresyntaxique.FSub;
-import arbresyntaxique.Float;
-import arbresyntaxique.Get;
-import arbresyntaxique.If;
-import arbresyntaxique.Int;
-import arbresyntaxique.LE;
-import arbresyntaxique.Let;
-import arbresyntaxique.LetRec;
-import arbresyntaxique.LetTuple;
-import arbresyntaxique.Neg;
-import arbresyntaxique.Not;
-import arbresyntaxique.Put;
-import arbresyntaxique.Sub;
-import arbresyntaxique.Tuple;
-import arbresyntaxique.Unit;
-import arbresyntaxique.Var;
-
+import arbremincaml.*;
 
 public interface ObjVisitor<E> {
     E visit(Unit e);
     E visit(Bool e);
     E visit(Int e);
-    E visit(Float e);
+    E visit(FloatMinCaml e);
     E visit(Not e);
     E visit(Neg e);
     E visit(Add e);

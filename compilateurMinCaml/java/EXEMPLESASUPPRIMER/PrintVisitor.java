@@ -1,31 +1,6 @@
 package EXEMPLESASUPPRIMER;
 
-import arbresyntaxique.Add;
-import arbresyntaxique.App;
-import arbresyntaxique.Array;
-import arbresyntaxique.Bool;
-import arbresyntaxique.Eq;
-import arbresyntaxique.Exp;
-import arbresyntaxique.FAdd;
-import arbresyntaxique.FDiv;
-import arbresyntaxique.FMul;
-import arbresyntaxique.FNeg;
-import arbresyntaxique.FSub;
-import arbresyntaxique.Float;
-import arbresyntaxique.Get;
-import arbresyntaxique.If;
-import arbresyntaxique.Int;
-import arbresyntaxique.LE;
-import arbresyntaxique.Let;
-import arbresyntaxique.LetRec;
-import arbresyntaxique.LetTuple;
-import arbresyntaxique.Neg;
-import arbresyntaxique.Not;
-import arbresyntaxique.Put;
-import arbresyntaxique.Sub;
-import arbresyntaxique.Tuple;
-import arbresyntaxique.Unit;
-import arbresyntaxique.Var;
+import arbremincaml.*;
 import visiteur.Visitor;
 import java.util.*;
 import visiteur.Visitor;
@@ -47,7 +22,7 @@ public class PrintVisitor implements Visitor {
     }
 
     @Override
-    public void visit(Float e) {
+    public void visit(FloatMinCaml e) {
         String s = String.format("%.2f", e.getValeur());
         System.out.print(s);
     }
