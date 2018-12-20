@@ -19,7 +19,7 @@ import util.CompilationException;
 
 
 
-class LeTest {
+public class LeTest {
 	
 	private final String CHEMIN_RESULTAT = "rsc/testsResultat";
 	private final String NOM_FICHIER_SORTIE_ASML = "nomFichierSortieTestASML.asml";
