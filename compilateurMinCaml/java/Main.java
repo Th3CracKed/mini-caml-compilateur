@@ -283,11 +283,11 @@ public class Main {
     }
  }
 
-*/
 
 
 
-    
+
+*/    
 
   
 // MAIN QUI RESPECTE l'INTERFACE EN LIGNE DE COMMANDE
@@ -316,8 +316,7 @@ public class Main {
       try
       {
             String nomFichierEntree = null;
-            String nomFichierSortieARM = null;
-            String nomFichierSortieASML = null;//"codeGenere."+(Arrays.asList(argv).contains("-asml")?"asml":"s");
+            String nomFichierSortie = null;
             HashSet<String> optionsDejaRencontrees = new HashSet<>();
             boolean typeCheck = false;
             boolean parseOnly = false;
@@ -337,7 +336,7 @@ public class Main {
                             afficherHelp();
                             tousLesCasBons = false;
                         } else {
-                            nomFichierSortieARM = argv[i];
+                            nomFichierSortie = argv[i];
                             aBesoinDeFichierEntree = true;
                         }
                         break;
@@ -358,15 +357,8 @@ public class Main {
                         parseOnly = true;
                         break;
                     case "-asml":
-                        i++;
-                        if(i == argv.length){
-                            afficherHelp();
-                            tousLesCasBons = false;
-                        } else {
-                            outputASML = true;
-                            nomFichierSortieASML = argv[i];
-                            aBesoinDeFichierEntree = true;
-                        }
+                        outputASML = true;
+                        aBesoinDeFichierEntree = true;
                         break;
                     default:
                         if(nomFichierEntree != null)
@@ -387,7 +379,7 @@ public class Main {
                 afficherHelp();
             } else {
                 if(tousLesCasBons){
-                    compiler(nomFichierEntree, nomFichierSortieARM, nomFichierSortieASML, typeCheck, parseOnly, outputASML);
+                    compiler(nomFichierEntree, nomFichierSortie, typeCheck, parseOnly, outputASML);
                 } 
             }
       }
@@ -417,7 +409,7 @@ public class Main {
  
   
   
-  public static void compiler(String nomFichierEntree, String nomFichierSortieARM, String nomFichierSortieASML, boolean typeCheck, boolean parseOnly, boolean outputASML) throws FileNotFoundException
+  public static void compiler(String nomFichierEntree, String nomFichierSortie, boolean typeCheck, boolean parseOnly, boolean outputASML) throws FileNotFoundException
   {             
                 Parser p = null;
                 try
@@ -448,17 +440,18 @@ public class Main {
                         expression = expression.accept(new VisiteurConversionClosure());
                         NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef((AsmtAsml)expression.accept(new VisiteurGenererArbreAsml())), new ArrayList<>());
                         if(outputASML){
-                            PrintStream fichierSortieASML = new PrintStream(nomFichierSortieASML);
+                            PrintStream fichierSortieASML = new PrintStream(nomFichierSortie);
                             arbreAsml.accept(new VisiteurGenererCodeAsml(fichierSortieASML));
                         }
-                        VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile();
-                        arbreAsml.accept(visAllocationRegistre);
-                        VisiteurListeLabels visListeLabels = new VisiteurListeLabels();
-                        arbreAsml.accept(visListeLabels);
-                        if(nomFichierSortieARM != null){
-                            PrintStream fichierSortieARM = new PrintStream(nomFichierSortieARM);
+                        else
+                        {
+                            VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile();
+                            arbreAsml.accept(visAllocationRegistre);
+                            VisiteurListeLabels visListeLabels = new VisiteurListeLabels();
+                            arbreAsml.accept(visListeLabels);
+                            PrintStream fichierSortieARM = new PrintStream(nomFichierSortie);
                             arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), fichierSortieARM, visListeLabels.getLabels()));
-                        }
+                        }                        
                     }
                 }
                 

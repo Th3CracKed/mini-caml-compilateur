@@ -14,6 +14,7 @@ echo:
 
 %.o : %.s libmincaml.S
 	${AS} -o $@ $^
+	
 
 %.arm : %.o
 	${LD} -o $@ $^

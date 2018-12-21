@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 cd "$(dirname "$0")"/.. || exit 1
 
 # TODO change this to point to your mincamlc executable if it's different, or add
@@ -12,25 +12,107 @@ MINCAMLC=java/mincamlc
 # TODO extends this script to run test in subdirectories
 # 
 
-for test_case in tests/syntax/valid/*.ml
-do
-    echo "testing parser on: $test_case"
-    if $MINCAMLC "$test_case" 2> /dev/null 1> /dev/null
-    then
-        echo "OK"
-    else 
-        echo "KO"
-    fi
-done
 
-for test_case in tests/syntax/invalid/*.ml
-do
-    echo "testing parser on: $test_case"
-    if $MINCAMLC "$test_case" 2> /dev/null 1> /dev/null
+DOSSIER_RESULTAT="resultatsTests"
+
+function assertEquals()
+{
+    #echo "$1 == $2"
+    if [ $1 -ne $2 ]
     then
-        echo "OK"
-    else 
-        echo "KO"
+	testReussi=0
+	echo "le test $fichierATester ECHOUE. Cause : $3"
     fi
+}
+
+function lancerTest()
+{
+	fichierATester=$1
+	doitCompiler=0
+	testReussi=1
+	#printf "$fichierATester ---> "
+	if [[ "$fichierATester" =~ .*/invalid/.*\.ml ]]
+	then
+		codeRetourAttendu=1
+	else
+		codeRetourAttendu=0
+	fi
+	#printf "$codeRetourAttendu "
+	if [[ "$fichierATester" =~ tests/syntax/.* ]]
+	then
+		#echo "syntax"
+		$MINCAMLC "$fichierATester" -p 2>/dev/null 1>/dev/null
+		assertEquals $codeRetourAttendu $? "parsing mincaml"
+		
+	elif [[ "$fichierATester" =~ tests/typechecking/.* ]]
+	then
+		#echo "typechecking"
+		$MINCAMLC "$fichierATester" -t 2>/dev/null 1>/dev/null
+		assertEquals $codeRetourAttendu $? "typechecking mincaml"
+	else
+		#echo "autres"
+		doitCompiler=1
+	fi
+	if [ $doitCompiler -eq 1 ]
+	then		
+		#echo "compilation"
+		fichierSansUnderscore=$(echo $fichierATester | tr "/" "_")
+		executableCaml="$DOSSIER_RESULTAT/$fichierSansUnderscore.executable"
+		traceCaml="$DOSSIER_RESULTAT/$fichierSansUnderscore.res"
+		fichierAsml="$DOSSIER_RESULTAT/$fichierSansUnderscore.asml"
+		traceAsml="$fichierAsml.res"
+		sourceAssembleur="$DOSSIER_RESULTAT/$fichierSansUnderscore.s"
+		objetAssembleur="$sourceAssembleur.o"
+		executableAssembleur="$sourceAssembleur.executable"
+		traceAssembleur="$sourceAssembleur.res"
+		ocamlc "$fichierATester" -o "$executableCaml" 2>/dev/null 1>/dev/null
+		assertEquals 0 $? "compilation ocaml"
+		"$executableCaml" > "$traceCaml"
+		$MINCAMLC "$fichierATester" -asml -o "$fichierAsml" 2>/dev/null 1>/dev/null
+		assertEquals $codeRetourAttendu $? "compilation mincaml vers asml"
+		tools/asml "$fichierAsml" > "$traceAsml" 2>/dev/null
+		diff "$traceCaml" "$traceAsml" 2>/dev/null 1>/dev/null
+		assertEquals 0 $? "diff ocaml asml"
+		$MINCAMLC "$fichierATester" -o "$sourceAssembleur" 2>/dev/null 1>/dev/null		
+		assertEquals 0 $? "compilation mincaml vers assembleur"
+		arm-eabi-as -o "$objetAssembleur" "$sourceAssembleur" ARM/libmincaml.S  2>/dev/null 1>/dev/null
+		assertEquals 0 $? "compilation assembleur"
+		arm-eabi-ld -o "$executableAssembleur" "$objetAssembleur" 2>/dev/null 1>/dev/null
+		assertEquals 0 $? "edition de lien assembleur"
+		qemu-arm "$executableAssembleur" > "$traceAssembleur" 2>/dev/null
+		diff "$traceCaml" "$traceAssembleur" 2>/dev/null 1>/dev/null
+		assertEquals 0 $? "diff ocaml assembleur"
+	fi
+	
+	if [ "$testReussi" -eq 1 ]
+	then
+		nbTestsQuiPasse=$(( $nbTestsQuiPasse+1 ))
+	fi
+	nbTests=$(( $nbTests+1 ))
+}
+
+export PATH="/opt/gnu/arm/bin:$PATH"
+
+if [ -d "$DOSSIER_RESULTAT" ]
+then
+	rm -r "$DOSSIER_RESULTAT"
+fi
+mkdir "$DOSSIER_RESULTAT"
+nbTests=0
+nbTestsQuiPasse=0
+printf "Progression : "
+for test_case in tests/*/*/*.ml
+do
+    lancerTest "$test_case"
+	printf "."
 done
+rm tests/*/*/*.cmi
+rm tests/*/*/*.cmo
+echo ""
+echo "///////////////////////////////////////////////////////"
+echo "Nombre de tests qui passent : $nbTestsQuiPasse/$nbTests"
+echo "///////////////////////////////////////////////////////"
+
+
+
 

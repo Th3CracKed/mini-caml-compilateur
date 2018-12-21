@@ -1,0 +1,10 @@
+#! /bin/sh
+export PATH="/opt/gnu/arm/bin:$PATH"
+exe=${1%.s}
+objetAssembleur=${1%.s}.o
+echo "1 : $1"
+echo "objetAssembleur : $objetAssembleur"
+echo "exe : $exe"
+arm-eabi-as -o "$objetAssembleur" "$1" ARM/libmincaml.S
+arm-eabi-ld -o "$exe" "$objetAssembleur"
+

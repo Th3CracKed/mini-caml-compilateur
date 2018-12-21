@@ -6,6 +6,7 @@ import arbremincaml.TBool;
 import arbremincaml.TFun;
 import arbremincaml.TVar;
 import arbremincaml.Type;
+import java.util.HashMap;
 import java.util.LinkedList;
 import util.CompilationException;
 import util.NotYetImplementedException;

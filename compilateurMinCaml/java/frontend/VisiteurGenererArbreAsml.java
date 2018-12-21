@@ -199,21 +199,24 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
             nomFonction = nomFonctionTraduiteAsml;
         }
         NoeudAsml resultat = new CallAsml(nomFonction, arguments);
-        for(Exp argument : e.getEs())
+        if(!nomFonction.equals(Constantes.PRINT_NEWLINE_ASML))
         {
-            if(argument instanceof Var)
+            for(Exp argument : e.getEs())
             {
-                String idString = ((Var)argument).getId().getIdString();
-                arguments.add((VarAsml)argument.accept(this));
+                if(argument instanceof Var)
+                {
+                    //String idString = ((Var)argument).getId().getIdString();
+                    arguments.add((VarAsml)argument.accept(this));
+                }
+                else
+                {
+                    String nouvelId = Id.genIdString();
+                    arguments.add(new VarAsml(nouvelId));
+                    resultat = new LetAsml(nouvelId, (ExpAsml)argument.accept(this), (AsmtAsml)resultat);
+                }
+
             }
-            else
-            {
-                String nouvelId = Id.genIdString();
-                arguments.add(new VarAsml(nouvelId));
-                resultat = new LetAsml(nouvelId, (ExpAsml)argument.accept(this), (AsmtAsml)resultat);
-            }
-            
-        }
+        }        
         return resultat;
     }
 

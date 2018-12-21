@@ -129,10 +129,17 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
     @Override
     public void visit(CallAsml e) {
         ecrireAvecIndentation("call "+e.getIdString());
-        for(VarAsml argument : e.getArguments())
+        if(e.getArguments().isEmpty())
         {
-            ecrire(" ");
-            argument.accept(this);
+            ecrire(" ()");
+        }
+        else
+        {            
+            for(VarAsml argument : e.getArguments())
+            {
+                ecrire(" ");
+                argument.accept(this);
+            }
         }
     }
 
