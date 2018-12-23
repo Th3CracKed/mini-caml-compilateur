@@ -152,8 +152,19 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
     }
 
     @Override
-    public LinkedList<EquationType> visit(If e) {
-        throw new NotYetImplementedException();
+    public LinkedList<EquationType> visit(If e) {        
+        changerType(new TBool());
+        LinkedList<EquationType> equations = e.getE1().accept(this);
+        restaurerType();
+        Type typeIf = Type.gen();
+        changerType(typeIf);
+        LinkedList<EquationType> equationsE2 = e.getE2().accept(this);
+        LinkedList<EquationType> equationsE3 = e.getE3().accept(this);
+        restaurerType();
+        equations.addAll(equationsE2);
+        equations.addAll(equationsE3);
+        equations.addFirst(new EquationType(typeIf, type));
+        return equations;
     }
 
     @Override
@@ -176,7 +187,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
         Type typeE = environnement.get(idString);
         if(typeE == null)
         {
-            throw new CompilationException("La variable "+idString+" n'a pas été déclarée");
+            throw new MyCompilationException("La variable "+idString+" n'a pas été déclarée");
         }
         return creerSingleton(typeE, type);
     }

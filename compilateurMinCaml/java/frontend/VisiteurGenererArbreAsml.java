@@ -136,7 +136,58 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
 
     @Override
     public NoeudAsml visit(If e) {
-        throw new NotYetImplementedException();
+        Exp e1 = e.getE1();
+        NoeudAsml e1Accepte = e.getE1().accept(this);
+        AsmtAsml e2Accepte = (AsmtAsml)e.getE2().accept(this);
+        AsmtAsml e3Accepte = (AsmtAsml)e.getE3().accept(this);
+        if(e1 instanceof OperateurRelationnel)
+        {
+            OperateurRelationnel e1OpRel = (OperateurRelationnel)e1;
+            VarOuIntAsml gaucheOpRel = (VarOuIntAsml)e1OpRel.getE1().accept(this);
+            VarOuIntAsml droiteOpRel = (VarOuIntAsml)e1OpRel.getE2().accept(this);
+            boolean aPermute = false;
+            if(gaucheOpRel instanceof IntAsml)
+            {
+                VarOuIntAsml temp = gaucheOpRel;
+                gaucheOpRel = droiteOpRel;
+                droiteOpRel = temp;
+                aPermute = true;
+            }
+            if (e1 instanceof Eq) {   
+                return new IfEqIntAsml((VarAsml)gaucheOpRel, droiteOpRel, e2Accepte, e3Accepte);
+            }
+            else // if(e1 instanceof LE)
+            {
+                if(aPermute)
+                {
+                    return new IfGEIntAsml((VarAsml)gaucheOpRel, droiteOpRel, e2Accepte, e3Accepte);
+                }
+                else
+                {
+                    return new IfLEIntAsml((VarAsml)gaucheOpRel, droiteOpRel, e2Accepte, e3Accepte);
+                }
+            }
+        }        
+        else if(e1 instanceof Var)
+        {
+            return new IfEqIntAsml((VarAsml)e1Accepte, IntAsml.vrai(), e2Accepte, e3Accepte);
+        }
+        else  // (e1 instanceof Bool)
+        {
+            boolean boolE1 = ((Bool)e1).getValeur();
+            if(boolE1)
+            {                
+                return e2Accepte;
+            }
+            else
+            {                
+                return e3Accepte;
+            }
+        }
+        /*ExpAsml e1 = (ExpAsml)e.getE1().accept(this);
+        ExpAsml e2 = (ExpAsml)e.getE2().accept(this);
+        VarAsml var = new VarAsml(Id.genIdString());
+        return new LetAsml(var.getIdString(), e1, new IfEqIntAsml(var, IntAsml.vrai(), e1, e2));*/
     }
 
     @Override

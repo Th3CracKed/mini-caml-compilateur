@@ -87,7 +87,10 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
 
     @Override
     public Exp visit(If e){   
-        throw new NotYetImplementedException();
+        Exp e1 = e.getE1().accept(this);
+        Exp e2 = e.getE2().accept(this);
+        Exp e3 = e.getE3().accept(this);
+        return new If(e1 , e2, e3);
     }
 
     @Override

@@ -33,4 +33,10 @@ public class EquationType {
         setT1(t2);
         setT2(temp);
     }
+    
+    @Override
+    public String toString()
+    {
+        return t1+" = "+t2;
+    }
 }

@@ -1,0 +1,1 @@
+let x = if (print_int 1) = (print_newline ()) then 1 else 2 in print_int x

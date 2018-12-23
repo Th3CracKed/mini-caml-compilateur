@@ -1,6 +1,6 @@
 package util;
 
-public class NotYetImplementedException extends CompilationException
+public class NotYetImplementedException extends MyCompilationException
 {
     public NotYetImplementedException()
     {

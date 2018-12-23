@@ -26,7 +26,9 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);      
         LE le = new LE(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
         Valeur valeurLe =  le.accept(new VisiteurCalculValeurConstante());
-        return (valeurLe == null)?super.visit(e):valeurLe;
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);
+        return (valeurLe == null || v.getAUnEffetDeBord())?super.visit(e):valeurLe;
     }
     
     @Override
@@ -34,14 +36,18 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);      
         Eq eq = new Eq(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
         Valeur valeurEq =  eq.accept(new VisiteurCalculValeurConstante());
-        return (valeurEq == null)?super.visit(e):valeurEq;
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);
+        return (valeurEq == null || v.getAUnEffetDeBord())?super.visit(e):valeurEq;
     }
     
    @Override
     public Exp visit(Not e) {
         Not not = new Not(UtilVisiteur.visitObjOpUnaireWorker(e, this));
         Valeur valeurNot =  not.accept(new VisiteurCalculValeurConstante());
-        return (valeurNot == null)?super.visit(e):valeurNot;
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);
+        return (valeurNot == null || v.getAUnEffetDeBord())?super.visit(e):valeurNot;
     }
     
     private Exp creerNoeudResultat(Valeur valeur)
@@ -50,7 +56,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         if(val instanceof Integer && (Integer)val < 0)
         {
             Var var = new Var(Id.gen());
-            return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), var);
+            return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), new Neg(var));
         }
         else
         {
@@ -62,7 +68,9 @@ public class VisiteurConstantFolding extends ObjVisitorExp
     public Exp visit(Neg e) {
         Neg neg = new Neg(UtilVisiteur.visitObjOpUnaireWorker(e, this));
         Valeur valeurNeg =  neg.accept(new VisiteurCalculValeurConstante());
-        return (valeurNeg == null)?super.visit(e):creerNoeudResultat(valeurNeg);
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);
+        return (valeurNeg == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurNeg);
     }
     
     
@@ -70,18 +78,23 @@ public class VisiteurConstantFolding extends ObjVisitorExp
     public Exp visit(Sub e) {   
         DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this); 
         Sub newSub = new Sub(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
-        Valeur valeurSub =  newSub.accept(new VisiteurCalculValeurConstante());        
-        return (valeurSub == null)?super.visit(e):creerNoeudResultat(valeurSub);
+        Valeur valeurSub =  newSub.accept(new VisiteurCalculValeurConstante());     
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);   
+        return (valeurSub == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurSub);
     }
    
     @Override
     public Exp visit(Add e) {
         DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this); 
         Add newAdd =   new Add(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
-        Valeur valeurAdd =  newAdd.accept(new VisiteurCalculValeurConstante());         
-        return (valeurAdd == null)?super.visit(e):creerNoeudResultat(valeurAdd);
+        Valeur valeurAdd =  newAdd.accept(new VisiteurCalculValeurConstante());     
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);    
+        return (valeurAdd == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurAdd);
     }
      
+   @Override
    public Exp visit(Var e) {
        Valeur valeurVar = varConstante.get(e.getId().getIdString());
        if(valeurVar == null || (valeurVar.getValeur() instanceof Integer && (Integer)valeurVar.getValeur() < 0))
@@ -108,22 +121,35 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         else
         {
             Object val = valeurAffecte.getValeur();
+            varConstante.put(idString, valeurAffecte);    
+            Exp e2Accepte = e2.accept(this);   
+            VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+            e.accept(v); 
+            if(v.getAUnEffetDeBord())
+            {
+                return super.visit(e);
+            }
             if(val instanceof Integer && (Integer)val < 0)
-            {            
-                varConstante.put(idString, valeurAffecte);    
-                Exp e2Accepte = e2.accept(this);        
+            {         
                 Var var = new Var(Id.gen());
                 return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), new Let(e.getId(),e.getT(), new Neg(var),e2Accepte));
             }
             else
-            {            
-                varConstante.put(idString, valeurAffecte);    
-                Exp e2Accepte = e2.accept(this);         
+            {                  
                 return new Let(e.getId(),e.getT(),valeurAffecte,e2Accepte);
             }
         }
     }
 
+    @Override
+    public Exp visit(If e){   
+        If nouveauIf = new If(e.getE1().accept(this), e.getE2().accept(this), e.getE3().accept(this));
+        Valeur valeur =  nouveauIf.accept(new VisiteurCalculValeurConstante());  
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);       
+        return (valeur == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeur);
+    }
+    
     private class VisiteurCalculValeurConstante implements ObjVisitor<Valeur>
     {        
         @Override
@@ -152,13 +178,13 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         private Valeur visitOpArithmetiqueIntWorker(OperateurArithmetiqueInt e, BinaryOperator<Integer> operateur)
         {
             DonneesOperateurBinaire<Valeur> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);       
-            Integer valeurExp1Integer = (Integer) donneesOpBinaire.getE1().getValeur();
-            Integer valeurExp2Integer = (Integer) donneesOpBinaire.getE2().getValeur();    
-            if(valeurExp1Integer == null || valeurExp2Integer == null)
+            Valeur valeur1 = donneesOpBinaire.getE1();
+            Valeur valeur2 = donneesOpBinaire.getE2();    
+            if(valeur1 == null || valeur2 == null)
             {
                 return null;
             }
-            return new Int(operateur.apply(valeurExp1Integer,valeurExp2Integer)); 
+            return new Int(operateur.apply((Integer)valeur1.getValeur(),(Integer)valeur2.getValeur())); 
         }
         
         @Override
@@ -199,13 +225,13 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         private Valeur visitOpRelationnelWorker(OperateurRelationnel e, BiFunction<Object, Object, Boolean> operateur)
         {
             DonneesOperateurBinaire<Valeur> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);    
-            Object valeur1 = donneesOpBinaire.getE1().getValeur();
-            Object valeur2 = donneesOpBinaire.getE1().getValeur();
+            Valeur valeur1 = donneesOpBinaire.getE1();
+            Valeur valeur2 = donneesOpBinaire.getE2();
             if(valeur1 == null || valeur2 == null)
             {
                 return null;
             }
-            return new Bool(  operateur.apply(valeur1, valeur2) );
+            return new Bool(  operateur.apply(valeur1.getValeur(), valeur2.getValeur()) );
         }
         
         @Override
@@ -221,7 +247,26 @@ public class VisiteurConstantFolding extends ObjVisitorExp
 
         @Override
         public Valeur visit(If e) {
-            throw new NotYetImplementedException();
+            Valeur valeurE1 = e.getE1().accept(this); 
+            Valeur valeurE2 = e.getE2().accept(this); 
+            Valeur valeurE3 = e.getE3().accept(this);        
+            if(valeurE1 != null)
+            {
+                boolean valE1 = (Boolean)valeurE1.getValeur();
+                if(valE1 &&  valeurE2 != null)
+                {
+                    return valeurE2;
+                }
+                else if(!valE1 &&  valeurE3 != null)
+                {
+                    return valeurE3;
+                }
+            }
+            if(valeurE2 != null && valeurE3 != null && valeurE2.getValeur().equals(valeurE3.getValeur()))
+            {
+                return valeurE2;
+            }
+            return null;
         }
 
         @Override

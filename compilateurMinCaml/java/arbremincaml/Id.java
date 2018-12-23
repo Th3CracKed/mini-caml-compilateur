@@ -2,7 +2,7 @@ package arbremincaml;
 
 import java.math.BigInteger;
 import java.util.HashSet;
-import util.CompilationException;
+import util.MyCompilationException;
 
 public class Id {
     private String idString;
@@ -24,7 +24,7 @@ public class Id {
     public final void setIdString(String idString) {        
         if(idString == null)
         {
-            throw new CompilationException("Un id de variable ne peut pas être null");
+            throw new MyCompilationException("Un id de variable ne peut pas être null");
         }
         this.idString = idString;
         idUtilises.add(idString);

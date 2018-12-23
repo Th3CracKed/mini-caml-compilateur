@@ -23,7 +23,7 @@ public class If extends Exp {
     }
     
     public Exp getE3() {
-        return e2;
+        return e3;
     }
 
     @Override

@@ -2,7 +2,7 @@ package backend;
 
 import arbreasml.*;
 import java.util.HashMap;
-import util.CompilationException;
+import util.MyCompilationException;
 import util.Constantes;
 import visiteur.*;
 
@@ -32,7 +32,7 @@ public class VisiteurRegistreSimple implements VisiteurAsml {
     private int registreVarSuivant(){
         if(indiceRegistreVarSuivant == Constantes.REGISTRES_VAR_LOCALES[Constantes.REGISTRES_VAR_LOCALES.length-1])
         {
-            throw new CompilationException("Les programmes avec plus de 8 variables locales ne sont pas supportés");
+            throw new MyCompilationException("Les programmes avec plus de 8 variables locales ne sont pas supportés");
         }
         int registre = Constantes.REGISTRES_VAR_LOCALES[indiceRegistreVarSuivant];
         indiceRegistreVarSuivant++;

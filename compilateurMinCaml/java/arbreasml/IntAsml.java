@@ -1,6 +1,6 @@
 package arbreasml;
 
-import util.CompilationException;
+import util.MyCompilationException;
 import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
@@ -10,7 +10,7 @@ public class IntAsml extends ValeurAsml<Integer> implements VarOuIntAsml {
         super(valeur);
         if(valeur < 0)
         {
-            throw new CompilationException("Utiliser un noeud neg pour le moins unaire");
+            throw new MyCompilationException("Utiliser un noeud neg pour le moins unaire");
         }
     }
 

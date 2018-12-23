@@ -1,1 +1,1 @@
-let _ = 3
+let x = 1 in y

@@ -2,85 +2,81 @@ package frontend;
 
 import arbremincaml.*;
 import java.util.LinkedList;
+import java.util.function.BinaryOperator;
 import util.NotYetImplementedException;
 import visiteur.ObjVisitorExp;
 
 public class KNormVisitor extends ObjVisitorExp {
 
-    @Override    
-    public Let visit(App e)
-    {
+    @Override
+    public Let visit(App e) {
         LinkedList<Exp> vars = new LinkedList<>();
         Var varFonction = new Var(Id.gen());
-        for(int i = 0 ; i < e.getEs().size() ; i++)
-        {
+        for (int i = 0; i < e.getEs().size(); i++) {
             vars.add(new Var(Id.gen()));
         }
         Exp resultat = new App(varFonction, vars);
-        for(int i = 0 ; i < e.getEs().size() ; i++)
-        {
-            resultat = new Let(((Var)vars.get(i)).getId(), Type.gen(), e.getEs().get(i).accept(this), resultat);
+        for (int i = 0; i < e.getEs().size(); i++) {
+            resultat = new Let(((Var) vars.get(i)).getId(), Type.gen(), e.getEs().get(i).accept(this), resultat);
         }
         return new Let(varFonction.getId(), Type.gen(), e.getE().accept(this), resultat);
     }
-    
-    
+
     @Override
-    public FloatMinCaml visit(FloatMinCaml e) { 
+    public FloatMinCaml visit(FloatMinCaml e) {
         throw new NotYetImplementedException();
         //return e;
     }
 
-    private class CreateurNoeudOpUnaire
-    {
+    private class CreateurNoeudOpUnaire {
+
         private final Exp exp;
         private final Id newId;
         private final Type newtype;
         private final Var var;
-        
-        public CreateurNoeudOpUnaire(OperateurUnaire e)
-        {
-            this.exp =  e.getE().accept(KNormVisitor.this);
+
+        public CreateurNoeudOpUnaire(OperateurUnaire e) {
+            this.exp = e.getE().accept(KNormVisitor.this);
             this.newId = Id.gen();
             this.newtype = Type.gen();
             this.var = new Var(newId);
         }
+
         public Var getVar() {
             return var;
         }
-        public Let creerNouveauNoeud(OperateurUnaire opUnaire)
-        {
-             return new Let(newId, newtype, exp, opUnaire) ;
-        } 
+
+        public Let creerNouveauNoeud(OperateurUnaire opUnaire) {
+            return new Let(newId, newtype, exp, opUnaire);
+        }
     }
 
     @Override
     public Let visit(Not e) {
-        CreateurNoeudOpUnaire resWorker =  new CreateurNoeudOpUnaire(e);
+        CreateurNoeudOpUnaire resWorker = new CreateurNoeudOpUnaire(e);
         Not not = new Not(resWorker.getVar());
         return resWorker.creerNouveauNoeud(not);
     }
 
     @Override
     public Let visit(Neg e) {
-        CreateurNoeudOpUnaire resWorker =  new CreateurNoeudOpUnaire(e);
+        CreateurNoeudOpUnaire resWorker = new CreateurNoeudOpUnaire(e);
         Neg neg = new Neg(resWorker.getVar());
-        return resWorker.creerNouveauNoeud(neg);     
+        return resWorker.creerNouveauNoeud(neg);
     }
 
-    private class CreateurNoeudOpBinaire
-    {
+    private class CreateurNoeudOpBinaire {
+
         private final Exp e1;
         private final Exp e2;
-        private final Id newId1; 
-        private final Id newId2; 
-        private final Var newVar1; 
-        private final Var newVar2; 
+        private final Id newId1;
+        private final Id newId2;
+        private final Var newVar1;
+        private final Var newVar2;
         private final Type newType1;
         private final Type newType2;
-        
-        public CreateurNoeudOpBinaire(OperateurBinaire e)
-        {
+
+        public CreateurNoeudOpBinaire(OperateurBinaire e) {
             this.e1 = e.getE1().accept(KNormVisitor.this);
             this.e2 = e.getE2().accept(KNormVisitor.this);
             this.newId1 = Id.gen();
@@ -90,11 +86,10 @@ public class KNormVisitor extends ObjVisitorExp {
             this.newType1 = Type.gen();
             this.newType2 = Type.gen();
         }
-        
-        public Let creerNoeud(OperateurBinaire e)
-        {            
+
+        public Let creerNoeud(OperateurBinaire e) {
             return new Let(newId1, newType1, e1,
-                  new Let(newId2, newType2, e2, e));
+                    new Let(newId2, newType2, e2, e));
         }
 
         public Var getNewVar1() {
@@ -105,43 +100,59 @@ public class KNormVisitor extends ObjVisitorExp {
             return newVar2;
         }
     }
-    
+
     @Override
     public Let visit(Add e) {
         CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
         return result.creerNoeud(new Add(result.getNewVar1(), result.getNewVar2()));
     }
 
-	
     @Override
     public Let visit(Sub e) {
-	CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
+        CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
         return result.creerNoeud(new Sub(result.getNewVar1(), result.getNewVar2()));
     }
 
     @Override
-    public Let visit(Eq e){
+    public Let visit(Eq e) {
         CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
         return result.creerNoeud(new Eq(result.getNewVar1(), result.getNewVar2()));
     }
 
     @Override
-    public Let visit(LE e){
+    public Let visit(LE e) {
         CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
         return result.creerNoeud(new LE(result.getNewVar1(), result.getNewVar2()));
     }
 
-    @Override
-    public If visit(If e){   
-        throw new NotYetImplementedException();
-        /*Exp e1 = e.getE1().accept(this);
-        Exp e2 = e.getE2().accept(this);
-        Exp e3 = e.getE3().accept(this);
-        return new If(e1, e2, e3);*/
+    private Exp visitIfWorker(Exp e1, Exp e2, Exp e3, BinaryOperator<Exp> createurOpRel) {
+        Eq e1Eq = (Eq) e1;
+        Var varE1Gauche = new Var(Id.gen());
+        Var varE1Droite = new Var(Id.gen());
+        return new Let(varE1Gauche.getId(), Type.gen(), e1Eq.getE1(), new Let(varE1Droite.getId(), Type.gen(), e1Eq.getE2(), new If(createurOpRel.apply(varE1Gauche, varE1Droite), e2, e3)));
     }
 
     @Override
-    public Let visit(Put e){
+    public Exp visit(If e) {
+        Exp e1 = e.getE1().accept(this);
+        Exp e2 = e.getE2().accept(this);
+        Exp e3 = e.getE3().accept(this);
+        BinaryOperator<Exp> createurOpRel = (a,b)->new Eq(a,b);
+        if (e1 instanceof Eq) {
+            return visitIfWorker(e1, e2, e3, createurOpRel);
+        }
+        else if(e1 instanceof LE)
+        {
+            return visitIfWorker(e1, e2, e3, (a,b)->new LE(a,b));
+        }
+        else
+        {
+            return visitIfWorker(new Eq(e1, new Bool(true)), e2, e3, createurOpRel); 
+        }
+    }
+
+    @Override
+    public Let visit(Put e) {
         throw new NotYetImplementedException();
         /*
         Exp e1 = e.getE1().accept(this);
@@ -163,5 +174,3 @@ public class KNormVisitor extends ObjVisitorExp {
         return res;*/
     }
 }
-
-

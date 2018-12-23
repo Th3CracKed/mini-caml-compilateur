@@ -1,14 +1,16 @@
 package typage;
 
+import arbremincaml.TArray;
 import arbremincaml.TUnit;
 import arbremincaml.TInt;
 import arbremincaml.TBool;
 import arbremincaml.TFun;
+import arbremincaml.TTuple;
 import arbremincaml.TVar;
 import arbremincaml.Type;
 import java.util.HashMap;
 import java.util.LinkedList;
-import util.CompilationException;
+import util.MyCompilationException;
 import util.NotYetImplementedException;
 
 
@@ -52,7 +54,7 @@ public class SolveurEquationType {
                 }
                 else
                 {
-                    throw new CompilationException(messageMalType);
+                    throw new MyCompilationException(messageMalType);
                 }
             }
             else if(t1Tete instanceof TFun)
@@ -65,7 +67,7 @@ public class SolveurEquationType {
                 }
                 else
                 {
-                    throw new CompilationException(messageMalType);
+                    throw new MyCompilationException(messageMalType);
                 }
             }
             else if(t1Tete instanceof TVar)
@@ -73,14 +75,7 @@ public class SolveurEquationType {
                 TVar t1TeteTVar = (TVar)t1Tete;
                 for(EquationType equation : listeEquations)
                 {
-                    if(TVarEtEgales(equation.getT1(), t1TeteTVar))
-                    {
-                        equation.setT1(t2Tete);
-                    }
-                    if(TVarEtEgales(equation.getT2(), t1TeteTVar))
-                    {
-                        equation.setT2(t2Tete);
-                    }
+                    remplacer(equation, t1TeteTVar, t2Tete);
                 }
                 LinkedList<EquationType> resultat = resoudreEquations(listeEquations);
                 resultat.addFirst(teteListe);
@@ -90,6 +85,62 @@ public class SolveurEquationType {
             {
                 throw new NotYetImplementedException();
             }
+        }
+    }
+    
+    private static void remplacer(EquationType equationDOrigine, TVar variable, Type valeurVariable)
+    {
+        Type t1 = equationDOrigine.getT1();
+        Type t2 = equationDOrigine.getT2();
+        if(TVarEtEgales(t1, variable))
+        {
+            equationDOrigine.setT1(valeurVariable);
+        }
+        else
+        {
+            remplacer(t1, variable, valeurVariable);
+        }
+        if(TVarEtEgales(t2, variable))
+        {
+            equationDOrigine.setT2(valeurVariable);
+        }
+        else
+        {
+            remplacer(t2, variable, valeurVariable);
+        }
+    }
+    
+    private static void remplacer(Type typeDOrigine, TVar variable, Type valeurVariable)
+    {
+        if(typeDOrigine instanceof TFun)
+        {
+            TFun typeDorigineFun = (TFun)typeDOrigine;
+            Type t1 = typeDorigineFun.getT1();
+            Type t2 = typeDorigineFun.getT2();
+            if(TVarEtEgales(t1, variable))
+            {
+                typeDorigineFun.setT1(valeurVariable);
+            }
+            else
+            {
+                remplacer(t1, variable, valeurVariable);
+            }
+            if(TVarEtEgales(t2, variable))
+            {
+                typeDorigineFun.setT2(valeurVariable);
+            }
+            else
+            {
+                remplacer(t1, variable, valeurVariable);
+            }
+        }
+        else if (typeDOrigine instanceof TTuple)
+        {
+            throw new NotYetImplementedException();
+        }
+        else if (typeDOrigine instanceof TArray)
+        {
+            throw new NotYetImplementedException();
         }
     }
 }

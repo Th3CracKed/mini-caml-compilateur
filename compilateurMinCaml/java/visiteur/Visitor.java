@@ -64,7 +64,9 @@ public interface Visitor {
     }
 
     default void visit(If e){        
-        throw new NotYetImplementedException();
+        e.getE1().accept(this);
+        e.getE2().accept(this);
+        e.getE3().accept(this);
     }
 
     default void visit(Let e) {      
