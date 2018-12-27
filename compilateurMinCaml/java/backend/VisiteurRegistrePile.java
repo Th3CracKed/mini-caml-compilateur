@@ -68,6 +68,7 @@ public class VisiteurRegistrePile implements VisiteurAsml {
     @Override
     public void visit(FunDefConcreteAsml e)
     {
+        remettreDecalageAZero();
         for(int i = 0 ; i < e.getArguments().size() ; i++)
         {
             EmplacementMemoire emplacement = null;

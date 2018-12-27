@@ -107,7 +107,10 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
 
     @Override
     public Exp visit(LetRec e){
-       throw new NotYetImplementedException();
+       Exp exp = e.getE().accept(this);
+       FunDef funDef = e.getFd();
+       FunDef nouvelleFunDef = new FunDef(funDef.getId(), funDef.getType(), funDef.getArgs(), funDef.getE().accept(this));
+      return new LetRec(nouvelleFunDef, exp);
     }
 
     @Override

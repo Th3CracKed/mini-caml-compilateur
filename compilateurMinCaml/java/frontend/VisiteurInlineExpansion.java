@@ -1,21 +1,227 @@
 package frontend;
 
-import arbremincaml.Var;
-import arbremincaml.Exp;
-import arbremincaml.App;
+import arbremincaml.*;
+import java.util.HashMap;
+import java.util.List;
 import util.Constantes;
 import util.NotYetImplementedException;
-import visiteur.ObjVisitorExp;
+import visiteur.*;
 
 public class VisiteurInlineExpansion extends ObjVisitorExp {
-
+    
+    private static final int TAILLE_MAX_INLINE_EXPANSION = 100;    
+    private final HashMap<String, FunDef> fonctionAEtendre;
+    
+    public VisiteurInlineExpansion()
+    {
+        fonctionAEtendre = new HashMap<>();
+    }
+    
+    @Override
+    public Exp visit(LetRec e)
+    {
+        FunDef funDef = e.getFd();
+        int tailleCorpsFonction = funDef.getE().accept(new VisiteurNbNoeudsArbre());
+        if(tailleCorpsFonction <= TAILLE_MAX_INLINE_EXPANSION)
+        {
+            fonctionAEtendre.put(funDef.getId().getIdString(), funDef);
+        }
+        return super.visit(e);
+    }
+    
     @Override
     public Exp visit(App e)
     {
-        if(!Constantes.FONCTION_EXTERNES_MINCAML.contains(((Var)e.getE()).getId().getIdString()))
+        FunDef funDef = null;
+        Exp fun = e.getE();
+        if(fun instanceof Var)
         {
-            throw new NotYetImplementedException(); // la fonctionnalité n'est pas implementee pour les fonctions non externes
+            funDef = fonctionAEtendre.get(((Var)fun).getId().getIdString());
         }
-        return super.visit(e);
+        if(funDef != null && !Constantes.FONCTION_EXTERNES_MINCAML.contains(((Var)e.getE()).getId().getIdString()))
+        {            
+            HashMap<String, String> renommage = new HashMap<>();
+            List<Id> args = funDef.getArgs();
+            for(int i = 0 ; i < args.size() ; i++)
+            {
+                renommage.put(args.get(i).getIdString(), ((Var)e.getEs().get(i)).getId().getIdString());
+            }
+            Exp copieCorpsFonction = funDef.getE().accept(new VisiteurCopieArbre());
+            copieCorpsFonction.accept(new VisiteurAlphaConversion(renommage));
+            return copieCorpsFonction;
+        }
+        else
+        {
+            return super.visit(e);
+        }
+    }   
+    
+    private class VisiteurNbNoeudsArbre implements ObjVisitor<Integer>
+    {
+
+        @Override
+        public Integer visit(Unit e) {
+            return 1;
+        }
+
+        @Override
+        public Integer visit(Bool e) {
+            return 1;
+        }
+
+        @Override
+        public Integer visit(Int e) {
+            return 1;
+        }
+
+        @Override
+        public Integer visit(FloatMinCaml e) {
+            throw new NotYetImplementedException();
+        }
+
+        private Integer visitOpUnaireWorker(OperateurUnaire e)
+        {
+            return 1 + e.getE().accept(this);
+        }
+        
+        @Override
+        public Integer visit(Not e) {
+            return visitOpUnaireWorker(e);
+        }
+
+        @Override
+        public Integer visit(Neg e) {
+            return visitOpUnaireWorker(e);
+        }
+        
+        private Integer visitOpBinaireWorker(OperateurBinaire e)
+        {
+            return 1 + e.getE1().accept(this) + e.getE2().accept(this);
+        }
+
+        @Override
+        public Integer visit(Add e) {
+            return visitOpBinaireWorker(e);
+        }
+
+        @Override
+        public Integer visit(Sub e) {
+            return visitOpBinaireWorker(e);
+        }
+
+        @Override
+        public Integer visit(FNeg e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(FAdd e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(FSub e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(FMul e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(FDiv e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(Eq e) {
+            return visitOpBinaireWorker(e);
+        }
+
+        @Override
+        public Integer visit(LE e) {
+            return visitOpBinaireWorker(e);
+        }
+
+        @Override
+        public Integer visit(If e) {
+            return 1 + e.getE1().accept(this) + e.getE2().accept(this) + e.getE3().accept(this);
+        }
+
+        @Override
+        public Integer visit(Let e) {
+            return 1 + e.getE1().accept(this) + e.getE2().accept(this);
+        }
+
+        @Override
+        public Integer visit(Var e) {
+            return 1;
+        }
+
+        @Override
+        public Integer visit(LetRec e) {
+            return 1 + e.getE().accept(this) + e.getFd().getE().accept(this);
+        }
+
+        @Override
+        public Integer visit(App e) {
+            int resultat = 1;
+            for(Exp arg : e.getEs())
+            {
+                resultat += arg.accept(this);
+            }
+            return resultat;
+        }
+
+        @Override
+        public Integer visit(Tuple e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(LetTuple e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(Array e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(Get e) {
+            throw new NotYetImplementedException();
+        }
+
+        @Override
+        public Integer visit(Put e) {
+            throw new NotYetImplementedException();
+        }
+        
+    }
+    
+    private class VisiteurCopieArbre extends ObjVisitorExp
+    {
+        @Override
+        public Exp visit(Var e)
+        {
+            return new Var(new Id(e.getId().getIdString()));
+        }
+        
+        @Override
+        public Exp visit(Let e) {
+          Exp e1 = e.getE1().accept(this);
+          Exp e2 = e.getE2().accept(this);
+          return new Let(new Id(e.getId().getIdString()), e.getT(), e1 , e2);
+        }
+
+        @Override
+        public Exp visit(LetRec e){
+           Exp exp = e.getE().accept(this);
+           FunDef funDef = e.getFd();
+           FunDef nouvelleFunDef = new FunDef(new Id(funDef.getId().getIdString()), funDef.getType(), funDef.getArgs(), funDef.getE().accept(this));
+          return new LetRec(nouvelleFunDef, exp);
+        }
     }
 }

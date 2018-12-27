@@ -12,13 +12,21 @@ import visiteur.ObjVisitor;
 
 public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
 
+    private final List<FunDefAsml> funDefs;
+    
     private final HashMap<String,String> funCamlVersAsml;
     
     public VisiteurGenererArbreAsml()
     {
+        funDefs = new ArrayList<>();
         funCamlVersAsml = new HashMap<>();
         funCamlVersAsml.put(Constantes.PRINT_INT_CAML, Constantes.PRINT_INT_ASML);
         funCamlVersAsml.put(Constantes.PRINT_NEWLINE_CAML, Constantes.PRINT_NEWLINE_ASML);
+    }
+    
+    public List<FunDefAsml> getFunDefs()
+    {
+        return funDefs;
     }
         
     @Override
@@ -75,16 +83,16 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     @Override
     public NoeudAsml visit(Sub e) {
         DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
-        if(donneesOpBinaire.getE1() instanceof IntAsml)
+        /*if(donneesOpBinaire.getE1() instanceof IntAsml)
         {            
             String idString = Id.genIdString();
             VarAsml var = new VarAsml(idString);
             return new LetAsml(idString, (IntAsml)donneesOpBinaire.getE1(), new SubAsml(var, (VarOuIntAsml)donneesOpBinaire.getE2()));
         }
         else
-        {
+        {*/
             return new SubAsml((VarAsml)donneesOpBinaire.getE1(), (VarOuIntAsml)donneesOpBinaire.getE2());
-        }
+        //}
     }
 
     @Override
@@ -123,10 +131,11 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
         DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
         if(donneesOpBinaire.getE1() instanceof IntAsml)
         {            
-            String idString = Id.genIdString();
+            /*String idString = Id.genIdString();
             VarAsml var = new VarAsml(idString);
             IfLEIntAsml ifLE = new IfLEIntAsml(var, (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-            return new LetAsml(idString, (IntAsml)donneesOpBinaire.getE1(), ifLE);
+            return new LetAsml(idString, (IntAsml)donneesOpBinaire.getE1(), ifLE);*/
+            return new IfGEIntAsml((VarAsml)donneesOpBinaire.getE2(), (VarOuIntAsml)donneesOpBinaire.getE1(), IntAsml.vrai(), IntAsml.faux());
         }
         else
         {
@@ -168,11 +177,11 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
                 }
             }
         }        
-        else if(e1 instanceof Var)
+        else //if(e1 instanceof Var)
         {
             return new IfEqIntAsml((VarAsml)e1Accepte, IntAsml.vrai(), e2Accepte, e3Accepte);
         }
-        else  // (e1 instanceof Bool)
+        /*else  // (e1 instanceof Bool)
         {
             boolean boolE1 = ((Bool)e1).getValeur();
             if(boolE1)
@@ -183,7 +192,7 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
             {                
                 return e3Accepte;
             }
-        }
+        }*/
         /*ExpAsml e1 = (ExpAsml)e.getE1().accept(this);
         ExpAsml e2 = (ExpAsml)e.getE2().accept(this);
         VarAsml var = new VarAsml(Id.genIdString());
@@ -237,7 +246,14 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
 
     @Override
     public NoeudAsml visit(LetRec e) {
-        throw new NotYetImplementedException();
+        FunDef funDef = e.getFd();
+        List<VarAsml> args = new ArrayList<>();
+        for(Id idArg : funDef.getArgs())
+        {
+            args.add(new VarAsml(idArg.getIdString()));
+        }
+        funDefs.add(new FunDefConcreteAsml(funDef.getId().getIdString(), (AsmtAsml)funDef.getE().accept(this), args));
+        return e.getE().accept(this);
     }
 
     @Override
@@ -254,17 +270,17 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
         {
             for(Exp argument : e.getEs())
             {
-                if(argument instanceof Var)
-                {
+                /*if(argument instanceof Var)
+                {*/
                     //String idString = ((Var)argument).getId().getIdString();
                     arguments.add((VarAsml)argument.accept(this));
-                }
+                /*}
                 else
                 {
                     String nouvelId = Id.genIdString();
                     arguments.add(new VarAsml(nouvelId));
                     resultat = new LetAsml(nouvelId, (ExpAsml)argument.accept(this), (AsmtAsml)resultat);
-                }
+                }*/
 
             }
         }        

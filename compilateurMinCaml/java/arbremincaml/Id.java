@@ -2,11 +2,24 @@ package arbremincaml;
 
 import java.math.BigInteger;
 import java.util.HashSet;
+import util.Constantes;
 import util.MyCompilationException;
 
 public class Id {
     private String idString;
-    private static final HashSet<String> idUtilises = new HashSet<>();;
+    private static HashSet<String> idUtilises = initIdUtilises();
+    
+    private static HashSet<String> initIdUtilises()
+    {
+        idUtilises = new HashSet<>();
+        idUtilises.addAll(Constantes.FONCTION_EXTERNES_MINCAML);
+        idUtilises.addAll(Constantes.MOTS_RESERVES_ASML);
+        idUtilises.addAll(Constantes.FONCTION_EXTERNES_ASML);
+        idUtilises.addAll(Constantes.FONCTION_EXTERNES_ARM);
+        idUtilises.add(Constantes.NOM_FONCTION_MAIN_ASML);
+        idUtilises.add(Constantes.NOM_FONCTION_MAIN_ARM);
+        return idUtilises;
+    }
     
     public Id(String idString) {
         this.setIdString(idString);
@@ -35,15 +48,25 @@ public class Id {
         return new Id(genIdString());
     }
     
-    public static String genIdString()
+    private static String genIdStringWorker(String prefixe)
     {
         String idString = null;
         do
         {            
             x = x.add(BigInteger.ONE);
-            idString = "v" + x;
+            idString = prefixe + x;
         }while(idUtilises.contains(idString));        
         return idString;
+    }
+    
+    public static String genIdString()
+    {
+         return genIdStringWorker("v");
+    }
+    
+    public static String genLabelString()
+    {
+        return genIdStringWorker("_v");
     }
 
 }

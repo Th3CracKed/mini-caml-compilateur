@@ -1,7 +1,6 @@
 package frontend;
 
-import arbremincaml.App;
-import arbremincaml.Put;
+import arbremincaml.*;
 import util.NotYetImplementedException;
 import visiteur.Visitor;
 
@@ -24,6 +23,11 @@ public class VisiteurEffetDeBord implements Visitor {
         @Override
         public void visit(App e) {
             setAUnEffetDeBord(true);
+        }
+        
+        @Override
+        public void visit(LetRec e) {
+            e.getE().accept(this);
         }
 
         @Override

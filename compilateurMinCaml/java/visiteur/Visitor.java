@@ -78,7 +78,8 @@ public interface Visitor {
     }
 
     default void visit(LetRec e){
-       throw new NotYetImplementedException();
+       e.getE().accept(this);
+       e.getFd().getE().accept(this);
     }
 
     default void visit(App e){

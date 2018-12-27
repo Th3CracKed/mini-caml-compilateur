@@ -28,6 +28,13 @@ public class Constantes {
     public static final String TRUNCATE_CAML = "truncate"; */   
     public static final List<String> FONCTION_EXTERNES_MINCAML = Arrays.asList(PRINT_INT_CAML, PRINT_NEWLINE_CAML/*, SIN_CAML, COS_CAML, SQRT_CAML, ABS_FLOAT_CAML, INT_OF_FLOAT_CAML, FLOAT_OF_INT_CAML, TRUNCATE_CAML*/);
     
+    // fonction principale asml
+    public static final String NOM_FONCTION_MAIN_ASML = "_";
+        
+    // mots reserves asml (seulement ceux qui pourraient être des identificateurs valides)
+    public static final List<String> MOTS_RESERVES_ASML = Arrays.asList("if", "then", "else", "let", "in", "neg", /*"fneg", "mem", "fmul", "fdiv", "fsub", "fadd",*/ "add", "sub", "call", /*"new",*/ "nop"/*, "apply_closure"*/);
+
+    
     // fonction externes asml
     public static final String PRINT_INT_ASML = "_min_caml_print_int";
     public static final String PRINT_NEWLINE_ASML = "_min_caml_print_newline";
@@ -41,4 +48,15 @@ public class Constantes {
     public static final String FLOAT_OF_INT_ASML = "_min_caml_float_of_int";
     public static final String TRUNCATE_ASML = "_min_caml_truncate";*/
     public static final List<String> FONCTION_EXTERNES_ASML = Arrays.asList(PRINT_INT_ASML, PRINT_NEWLINE_ASML/*, CREATE_ARRAY_ASML, CREATE_FLOAT_ARRAY_ASML, SIN_ASML, COS_ASML, SQRT_ASML, ABS_FLOAT_ASML, INT_OF_FLOAT_ASML, FLOAT_OF_INT_ASML, TRUNCATE_ASML*/);
+
+    
+    // fonction principale arm
+    public static final String NOM_FONCTION_MAIN_ARM = "_start";
+    
+    // fonction externes arm
+    public static final String PRINT_INT_ARM = "min_caml_print_int";
+    public static final String PRINT_NEWLINE_ARM = "min_caml_print_newline";
+    /*public static final String SIN_ARM = "_min_caml_sin";
+    public static final String COS_ARM = "_min_caml_cos";*/
+    public static final List<String> FONCTION_EXTERNES_ARM = Arrays.asList(PRINT_INT_ARM, PRINT_NEWLINE_ARM/*, SIN_ARM, COS_ARM */);
 }

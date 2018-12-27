@@ -311,12 +311,12 @@ public class Main {
     private static final int CODE_RETOUR_ERREUR = 1;
 
     static public void main(String argv[]) {
-        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\autres\\valid");
+        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid");
         for (File fichier : dossierTests.listFiles()) {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }*/
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\autres\\valid\\ifNonConstant.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\nested_fun.ml", "-o", "out.s"};
         lancerCompilateur(argv);
     }
 
@@ -420,7 +420,7 @@ public class Main {
         } catch (Exception ex) {
             throw new MyCompilationException(ex.getMessage());
         }
-        if (parseOnly == false) {
+        if (!parseOnly) {
             expression.accept(new PrintVisitor());
             System.out.println();
             LinkedList<EquationType> equationsType = expression.accept(new VisiteurGenererEquationType());
@@ -431,7 +431,7 @@ public class Main {
             /* ========= */ System.out.println("======================SOL");
             equationsType.forEach(x -> System.out.println(x));
             System.out.println();
-            if (typeCheck == false) {
+            if (!typeCheck) {
 
                 expression = expression.accept(new KNormVisitor());
                 /* ========= */ System.out.println("======================APRES KNORM");
@@ -454,6 +454,10 @@ public class Main {
                 /* ========= */ System.out.println("======================APRES INLINE");
                 expression.accept(new PrintVisitor());
                 System.out.println();
+                expression = expression.accept(new VisiteurLetImbriques());
+                /* ========= */ System.out.println("======================APRES LET UNE DEUXIEME FOIS"); // l'inline expansion peut rajouter des let imbriqués
+                expression.accept(new PrintVisitor());
+                System.out.println();
                 expression = expression.accept(new VisiteurConstantFolding());
                 /* ========= */ System.out.println("======================APRES CONSTANT");
                 expression.accept(new PrintVisitor());
@@ -466,7 +470,9 @@ public class Main {
                 /* ========= */ System.out.println("======================APRES CONV CLOSURE");
                 expression.accept(new PrintVisitor());
                 System.out.println();
-                NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef((AsmtAsml) expression.accept(new VisiteurGenererArbreAsml())), new ArrayList<>());
+                VisiteurGenererArbreAsml visGenAbAsml = new VisiteurGenererArbreAsml();
+                AsmtAsml corpsFunMain = (AsmtAsml) expression.accept(visGenAbAsml);
+                NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef(corpsFunMain), visGenAbAsml.getFunDefs());
                 /* ========= */ System.out.println("======================ASML");
                 arbreAsml.accept(new VisiteurGenererCodeAsml(System.out));
                 if (outputASML) {
@@ -483,7 +489,7 @@ public class Main {
                     System.out.println(visListeLabels.getLabels());
                     PrintStream fichierSortieARM = new PrintStream(nomFichierSortie);
                     arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), fichierSortieARM, visListeLabels.getLabels()));
-                    /* ========= */ System.out.println("======================ASML");
+                    /* ========= */ System.out.println("======================ARM");
                     arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), System.out, visListeLabels.getLabels()));
                 }
             }

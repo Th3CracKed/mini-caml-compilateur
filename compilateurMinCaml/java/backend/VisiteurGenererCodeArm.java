@@ -19,7 +19,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     private static final int NUM_REGISTRE_OPERANDE2 = 5;
     private static final int NUM_REGISTRE_IMMEDIAT_INVALIDE = 6;
     private static final int NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR = 7;
-    private static final String NOM_FONCTION_MAIN_ARM = "_start";
     private static final String FP = "FP";
     private static final String SP = "SP";
     private static final String LR = "LR";
@@ -33,8 +32,8 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     //private static final int MIN_IMMEDIAT_SHIFTER_OPERAND = -(int) Math.pow(2, 7);
     //private static final int MAX_IMMEDIAT_SHIFTER_OPERAND = -MIN_IMMEDIAT_SHIFTER_OPERAND-1; // toutes les valeurs sur 8 bits sont valides pour le shifter operand (entre -2^7 et 2^7-1)
     
-    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{0, 1, 2, 3, Constantes.LR};
-    private static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR};
+    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{0, 1, 2, 3, Constantes.FP, Constantes.LR};
+    private static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{Constantes.LR};
 
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final HashMap<Integer, String> registreVersChaine;
@@ -319,45 +318,68 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
     private void ajouterValeurASP(int valeur)
     {
-        int valAbs = Math.abs(valeur);
-        String instruction = (valeur > 0)?"ADD":"SUB";
-        String chaineOperande2 = null;
-        if(estShifterOpImmediatValide(valAbs))
-        {
-            chaineOperande2 = "#"+valAbs;
-        }
-        else
+        if(valeur != 0)
         {            
-            chargerValeurImmediateLDR(valAbs);
-            chaineOperande2 = "R"+NUM_REGISTRE_IMMEDIAT_INVALIDE;
+            int valAbs = Math.abs(valeur);
+            String instruction = (valeur > 0)?"ADD":"SUB";
+            String chaineOperande2 = null;
+            if(estShifterOpImmediatValide(valAbs))
+            {
+                chaineOperande2 = "#"+valAbs;
+            }
+            else
+            {            
+                chargerValeurImmediateLDR(valAbs);
+                chaineOperande2 = "R"+NUM_REGISTRE_IMMEDIAT_INVALIDE;
+            }
+            ecrireAvecIndentation(instruction+" SP, SP, "+chaineOperande2+"\n");
         }
-        ecrireAvecIndentation(instruction+" SP, SP, "+chaineOperande2+"\n");
     }
     
     @Override
     public void visit(FunDefConcreteAsml e) {
         if (e.estMainFunDef()) {
-            ecrire(NOM_FONCTION_MAIN_ARM);
+            ecrire(Constantes.NOM_FONCTION_MAIN_ARM);
         } else {
             ecrire(e.getLabel());
         }
         ecrire(":\n");
         augmenterNiveauIndentation();
         changerEstInstructionMov(true);
-        int tailleEnvironnement = e.accept(new VisiteurTailleEnvironnement()) + 4 * REGISTRE_SAUVEGARDES_APPELE.length;
+        int tailleEnvironnement = e.accept(new VisiteurTailleEnvironnement())/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;
+        if(REGISTRE_SAUVEGARDES_APPELE.length >= 1)
+        {
+            ecrireAvecIndentation("STMFD SP!, {");
+            for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELE.length; i++) {
+                if(i >= 1)
+                {
+                    ecrire(", ");
+                }
+                ecrire(strReg(REGISTRE_SAUVEGARDES_APPELE[i]));
+                //loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
+            }
+            ecrire("}\n");
+        }           
         ecrireAvecIndentation("MOV FP, SP\n");
         ajouterValeurASP(-tailleEnvironnement);
-        for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELE.length; i++) {
-            loadStoreWorker(new AdressePile((tailleEnvironnement - (i + 1) * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
-        }
         e.getAsmt().accept(this);
-        for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELE.length; i++) {
-            loadStoreWorker(new AdressePile((tailleEnvironnement - (i + 1) * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELE[i], LDR, Constantes.SP);
-        }
         ecrireAvecIndentation("MOV SP, FP\n");
+        if(REGISTRE_SAUVEGARDES_APPELE.length >= 1)
+        {
+            ecrireAvecIndentation("LDMFD SP!, {");
+            for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELE.length; i++) {
+                if(i >= 1)
+                {
+                    ecrire(", ");
+                }
+                ecrire(strReg(REGISTRE_SAUVEGARDES_APPELE[i]));
+                //loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
+            }
+            ecrire("}\n");
+        }
         restaurerEstInstructionMov();
         if (!e.estMainFunDef()) {
-            ecrireAvecIndentation("MOV PC, LR\n");
+            ecrireAvecIndentation("BX LR\n");
         }
         diminuerNiveauIndentation();
         ecrire("\n");
@@ -365,11 +387,21 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     
         @Override
     public void visit(CallAsml e) {
-        int tailleAEmpiler = (REGISTRE_SAUVEGARDES_APPELANT.length + Math.max(0, (e.getArguments().size() - Constantes.REGISTRES_PARAMETRES.length))) * Constantes.TAILLE_MOT_MEMOIRE;
+        int tailleAEmpiler = (/*REGISTRE_SAUVEGARDES_APPELANT.length + */Math.max(0, (e.getArguments().size() - Constantes.REGISTRES_PARAMETRES.length))) * Constantes.TAILLE_MOT_MEMOIRE;
         ajouterValeurASP(-tailleAEmpiler);
-        for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELANT.length; i++) {
-            loadStoreWorker(new AdressePile((tailleAEmpiler - (i + 1) * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELANT[i], STR, Constantes.SP);
-        }
+        if(REGISTRE_SAUVEGARDES_APPELANT.length >= 1)
+        {
+            ecrireAvecIndentation("STMFD SP!, {");
+            for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELANT.length; i++) {
+                if(i >= 1)
+                {
+                    ecrire(", ");
+                }
+                ecrire(strReg(REGISTRE_SAUVEGARDES_APPELANT[i]));
+                //loadStoreWorker(new AdressePile((tailleAEmpiler - i * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELANT[i], STR, Constantes.SP);
+            }
+            ecrire("}\n");
+        }  
         for (int i = 0; i < e.getArguments().size(); i++) {
             chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
             if (i <= Constantes.REGISTRES_PARAMETRES.length - 1) {
@@ -377,22 +409,61 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 visitOperande1Worker(e.getArguments().get(i));
                 ecrire("\n");
             } else {
-                loadStoreWorker(new AdressePile(tailleAEmpiler - (REGISTRE_SAUVEGARDES_APPELANT.length + i + 1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
+                loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
             }
         }
         ecrireAvecIndentation("BL ");
         if (e.getIdString().equals(Constantes.PRINT_INT_ASML)) {
-            ecrire("min_caml_print_int");
+            ecrire(Constantes.PRINT_INT_ARM);
         } else if (e.getIdString().equals(Constantes.PRINT_NEWLINE_ASML)) {
-            ecrire("min_caml_print_newline");
-        } else {
+            ecrire(Constantes.PRINT_NEWLINE_ARM);
+        }  /*else if (e.getIdString().equals(Constantes.CREATE_ARRAY_ASML)) {
+            throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.CREATE_FLOAT_ARRAY_ASML)) {
+            throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.SIN_ASML)) {
+            ecrire(Constantes.SIN_ARM);throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.COS_ASML)) {
+            ecrire(Constantes.COS_ARM);throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.SQRT_ASML)) {
+            throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.ABS_FLOAT_ASML)) {
+            throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.INT_OF_FLOAT_ASML)) {
+            throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.FLOAT_OF_INT_ASML)) {
+            throw new NotYetImplementedException();
+        } else if (e.getIdString().equals(Constantes.TRUNCATE_ASML)) {
+            throw new NotYetImplementedException();
+        } */else {
             ecrire(e.getIdString());
         }
+        /*
+         = "_min_caml_create_array";
+    public static final String  = "_min_caml_create_float_array";
+    public static final String  = "_min_caml_sin";
+    public static final String  = "_min_caml_cos";
+    public static final String  = "_min_caml_sqrt";
+    public static final String  = "_min_caml_abs_float";
+    public static final String  = "_min_caml_int_of_float";
+    public static final String  = "_min_caml_float_of_int";
+    public static final String 
+        */
         ecrireAvecIndentation("\n");
         ecrireAvecIndentation("MOV " + strReg(NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR) + ", " + strReg(Constantes.REGISTRE_VALEUR_RETOUR) + "\n");
-        strDestination();
-        for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELANT.length; i++) {
-            loadStoreWorker(new AdressePile((tailleAEmpiler - (i + 1) * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELANT[i], LDR, Constantes.SP);
+        //strDestination();
+        if(REGISTRE_SAUVEGARDES_APPELANT.length >= 1)
+        {
+            ecrireAvecIndentation("LDMFD SP!, {");
+            for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELANT.length; i++) {
+                if(i >= 1)
+                {
+                    ecrire(", ");
+                }
+                ecrire(strReg(REGISTRE_SAUVEGARDES_APPELANT[i]));
+                //loadStoreWorker(new AdressePile((tailleAEmpiler - i * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELANT[i], STR, Constantes.SP);
+            }
+            ecrire("}\n");
         }
         ecrireAvecIndentation("MOV ");
         visitDestinationWorker();
@@ -426,7 +497,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     @Override
     public void visit(ProgrammeAsml e) {
         ecrire(".text\n");
-        ecrire(".global " + NOM_FONCTION_MAIN_ARM + "\n");
+        ecrire(".global " + Constantes.NOM_FONCTION_MAIN_ARM + "\n");
         for (FunDefAsml funDef : e.getFunDefs()) {
             funDef.accept(this);
         }

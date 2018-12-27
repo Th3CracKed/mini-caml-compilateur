@@ -2,12 +2,12 @@ package arbreasml;
 
 import java.util.ArrayList;
 import java.util.List;
+import util.Constantes;
 import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
 public class FunDefConcreteAsml extends FunDefAsml {
     
-    public static final String NOM_FONCTION_MAIN = "_";
     private final AsmtAsml asmt;
     
     public FunDefConcreteAsml(String label, AsmtAsml asmt, List<VarAsml> arguments)
@@ -18,12 +18,12 @@ public class FunDefConcreteAsml extends FunDefAsml {
 
     public static FunDefConcreteAsml creerMainFunDef(AsmtAsml asmt)
     {
-        return new FunDefConcreteAsml(NOM_FONCTION_MAIN, asmt, new ArrayList<>());
+        return new FunDefConcreteAsml(Constantes.NOM_FONCTION_MAIN_ASML, asmt, new ArrayList<>());
     }
     
     public boolean estMainFunDef()
     {
-        return this.getLabel().equals(NOM_FONCTION_MAIN);
+        return this.getLabel().equals(Constantes.NOM_FONCTION_MAIN_ASML);
     }
     
     public AsmtAsml getAsmt() {

@@ -23,6 +23,21 @@ public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
         }
     }
     
+    @Override
+    public Exp visit(LetRec e) {
+        Exp exp = e.getE().accept(this);
+        FunDef funDef = e.getFd();
+        Id id = funDef.getId();
+        VisiteurVariablesUtilisees visVarUtilisees = new VisiteurVariablesUtilisees();
+        exp.accept(visVarUtilisees);
+        if (visVarUtilisees.getVariablesUtilisees().contains(id.getIdString())) {
+            Exp eFunDef = funDef.getE().accept(this);
+            return new LetRec(new FunDef(id, funDef.getType(), funDef.getArgs(), eFunDef), exp);
+        } else {
+            return exp;
+        }
+    }
+    
     private class VisiteurVariablesUtilisees implements Visitor {
 
         private final HashSet<String> variablesUtilisees;

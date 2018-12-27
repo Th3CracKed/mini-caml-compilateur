@@ -1,31 +1,33 @@
 package typage;
 
 import arbremincaml.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 import util.*;
 import visiteur.ObjVisitor;
 
 public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<EquationType>>{
 
-    private final HashMap<String, Type> environnement;
+    private final HashMap<String, Type> environnementVar;
     private Type type;
     private final Stack<Type> anciensTypes;
     
     public VisiteurGenererEquationType()
     {
-        environnement = new HashMap<>();
-        environnement.put(Constantes.PRINT_INT_CAML, new TFun(new TInt(), new TUnit()));
-        environnement.put(Constantes.PRINT_NEWLINE_CAML, new TFun(new TUnit(), new TUnit()));
-        /*environnement.put(Constantes.SIN_CAML, new TFun(new TFloat(), new TFloat()));
-        environnement.put(Constantes.COS_CAML, new TFun(new TFloat(), new TFloat()));
-        environnement.put(Constantes.SQRT_CAML, new TFun(new TFloat(), new TFloat()));
-        environnement.put(Constantes.ABS_FLOAT_CAML, new TFun(new TFloat(), new TFloat()));
-        environnement.put(Constantes.INT_OF_FLOAT_CAML, new TFun(new TFloat(), new TInt()));
-        environnement.put(Constantes.FLOAT_OF_INT_CAML, new TFun(new TInt(), new TFloat()));
-        environnement.put(Constantes.TRUNCATE_CAML, new TFun(new TFloat(), new TFloat()));*/
+        environnementVar = new HashMap<>();
+        environnementVar.put(Constantes.PRINT_INT_CAML, new TFun(new TInt(), new TUnit()));
+        environnementVar.put(Constantes.PRINT_NEWLINE_CAML, new TFun(new TUnit(), new TUnit()));
+        /*environnementFonctions.put(Constantes.SIN_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementFonctions.put(Constantes.COS_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementFonctions.put(Constantes.SQRT_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementFonctions.put(Constantes.ABS_FLOAT_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementFonctions.put(Constantes.INT_OF_FLOAT_CAML, new TFun(new TFloat(), new TInt()));
+        environnementFonctions.put(Constantes.FLOAT_OF_INT_CAML, new TFun(new TInt(), new TFloat()));
+        environnementFonctions.put(Constantes.TRUNCATE_CAML, new TFun(new TFloat(), new TFloat()));*/
         type = new TUnit();
         anciensTypes = new Stack<>();
     }
@@ -168,40 +170,77 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
     }
 
     @Override
+    public LinkedList<EquationType> visit(Var e) {
+        String idString = e.getId().getIdString();
+        Type typeE = environnementVar.get(idString);
+        if(typeE == null)
+        {
+            throw new MyCompilationException("La variable "+idString+" n'a pas été déclarée");
+        }
+        System.out.println("dans var : "+typeE+" = "+type);
+        return creerSingleton(typeE, type);
+    }
+    
+    @Override
     public LinkedList<EquationType> visit(Let e) {
         Type typeVariable = e.getT();
         String idString = e.getId().getIdString();
         changerType(typeVariable);
         LinkedList<EquationType> equationsE1 = e.getE1().accept(this);
         restaurerType();
-        environnement.put(idString, typeVariable);
+        Type ancienTypeVar = environnementVar.get(idString);
+        environnementVar.put(idString, typeVariable);
         LinkedList<EquationType> equationsE2 = e.getE2().accept(this);
-        environnement.remove(idString);
+        environnementVar.put(idString, ancienTypeVar);
         equationsE1.addAll(equationsE2);
         return equationsE1;
     }
 
     @Override
-    public LinkedList<EquationType> visit(Var e) {
-        String idString = e.getId().getIdString();
-        Type typeE = environnement.get(idString);
-        if(typeE == null)
-        {
-            throw new MyCompilationException("La variable "+idString+" n'a pas été déclarée");
-        }
-        return creerSingleton(typeE, type);
-    }
-
-    @Override
     public LinkedList<EquationType> visit(LetRec e) {
-        throw new NotYetImplementedException();
+        Type typeRetour = Type.gen();
+        Type typeFlecheFun = typeRetour;
+        FunDef funDef = e.getFd();
+        Type typeFun = Type.gen();// funDef.getType() renvoie null
+        String idStringFun = funDef.getId().getIdString();
+        Type ancienTypeVar = environnementVar.get(idStringFun);
+        environnementVar.put(idStringFun, typeFun); System.out.println("declaration de "+idStringFun+" : "+typeFun);
+        HashMap<String, Type> anciensTypesVarsArgs = new HashMap<>();
+        List<Id> idsArguments = funDef.getArgs();
+        int nbParametres = idsArguments.size();
+        for(int i = nbParametres-1 ; i >= 0  ; i--)
+        {
+            Type typeArgumentCourant = Type.gen();
+            String idStringArg = idsArguments.get(i).getIdString();
+            anciensTypesVarsArgs.put(idStringArg, environnementVar.get(idStringArg));
+            environnementVar.put(idStringArg, typeArgumentCourant);
+            typeFlecheFun = new TFun(typeArgumentCourant, typeFlecheFun);
+        }
+        LinkedList<EquationType> equations = new LinkedList<>(Arrays.asList(new EquationType(typeFun, typeFlecheFun)));
+        changerType(typeRetour);
+        equations.addAll(funDef.getE().accept(this));  
+        restaurerType();    
+        environnementVar.putAll(anciensTypesVarsArgs);
+        /*for(int i = 0 ; i < idsArguments.size()  ; i++)
+        {
+            environnementVar.remove(idsArguments.get(i).getIdString());
+        }*/
+        System.out.println(anciensTypesVarsArgs);
+        System.out.println(equations);
+        equations.addAll(e.getE().accept(this));
+        System.out.println(equations);
+        environnementVar.put(idStringFun, ancienTypeVar);
+        System.out.println("destruction de "+idStringFun);
+        return equations;
     }
 
     @Override
     public LinkedList<EquationType> visit(App e) {
         Type typeVarFonction = Type.gen();
-        changerType(typeVarFonction);
+        changerType(typeVarFonction);       
+        System.out.println("avant : ");
         LinkedList<EquationType> equations = e.getE().accept(this);
+        System.out.println("typeVarFonction : "+typeVarFonction+"\nDans App : "+equations);
         restaurerType();
         Type typeResultat = Type.gen();
         TFun typeFun = null;
@@ -214,7 +253,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
             typeFun = new TFun(typeArgument, (typeFun == null)?typeResultat:typeFun);
         }
         equations.add(new EquationType(typeVarFonction, typeFun));
-        equations.add(new EquationType(type, typeResultat));
+        equations.add(new EquationType(type, typeResultat)); 
         return equations;
     }
 

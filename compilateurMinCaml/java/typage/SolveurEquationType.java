@@ -54,6 +54,7 @@ public class SolveurEquationType {
                 }
                 else
                 {
+                    System.out.println("mal type : "+t1Tete+" = "+t2Tete);
                     throw new MyCompilationException(messageMalType);
                 }
             }

@@ -5,6 +5,7 @@ import arbremincaml.*;
 import java.util.HashMap;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import util.MyCompilationException;
 import util.NotYetImplementedException;
 import visiteur.DonneesOperateurBinaire;
 import visiteur.ObjVisitor;
@@ -81,11 +82,19 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         Valeur valeurSub =  newSub.accept(new VisiteurCalculValeurConstante());     
         VisiteurEffetDeBord v = new VisiteurEffetDeBord();
         e.accept(v);   
-        return (valeurSub == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurSub);
+        if(valeurSub == null || v.getAUnEffetDeBord())
+        {
+            return new Sub(e.getE1(), donneesOpBinaire.getE2());
+        }
+        else
+        {
+            return creerNoeudResultat(valeurSub);
+        }
     }
    
     @Override
     public Exp visit(Add e) {
+        
         DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this); 
         Add newAdd =   new Add(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
         Valeur valeurAdd =  newAdd.accept(new VisiteurCalculValeurConstante());     
@@ -110,7 +119,37 @@ public class VisiteurConstantFolding extends ObjVisitorExp
     @Override
     public Exp visit(Let e) 
     {        
+        System.out.println("visit let "+e.getId().getIdString());
         Exp e1 = e.getE1();
+        Exp e2 = e.getE2(); 
+        Valeur valeurE1 = e1.accept(new VisiteurCalculValeurConstante());   
+        System.out.println("valeur e1 : "+valeurE1);     
+        Exp e1Accepte = null;
+        Exp e2Accepte = null;
+        VisiteurEffetDeBord v1 = new VisiteurEffetDeBord();
+        e1.accept(v1);
+        if(!v1.getAUnEffetDeBord() && valeurE1 != null && (!(valeurE1.getValeur() instanceof Integer) || (Integer)valeurE1.getValeur() >= 0))
+        {              
+            e1Accepte = valeurE1;
+            varConstante.put(e.getId().getIdString(), valeurE1);  
+        }
+        Valeur valeurE2 = e2.accept(new VisiteurCalculValeurConstante());
+        VisiteurEffetDeBord v2 = new VisiteurEffetDeBord();
+        e2.accept(v2);
+        if(!v2.getAUnEffetDeBord() && valeurE2 != null && (!(valeurE2.getValeur() instanceof Integer) || (Integer)valeurE2.getValeur() >= 0))
+        {
+            e2Accepte = valeurE2;
+        }
+        if(e1Accepte == null)
+        {
+            e1Accepte = e1.accept(this);
+        }
+        if(e2Accepte == null)
+        {
+            e2Accepte = e2.accept(this);
+        }
+        return new Let(e.getId(), e.getT(), e1Accepte, e2Accepte);
+        /*Exp e1 = e.getE1();
         Exp e2 = e.getE2();        
         String idString = e.getId().getIdString();
         Valeur valeurAffecte = e1.accept(new VisiteurCalculValeurConstante());  
@@ -138,16 +177,63 @@ public class VisiteurConstantFolding extends ObjVisitorExp
             {                  
                 return new Let(e.getId(),e.getT(),valeurAffecte,e2Accepte);
             }
-        }
+        }*/
     }
 
     @Override
+    public Exp visit(LetRec e) 
+    {        
+        FunDef funDef = e.getFd();
+        Exp eFunDef = funDef.getE();
+        Exp exp = e.getE(); 
+        Valeur valeurEFunDef = eFunDef.accept(new VisiteurCalculValeurConstante());       
+        Exp eFunDefAccepte = null;
+        Exp expAccepte = null;
+        VisiteurEffetDeBord vEFunDef = new VisiteurEffetDeBord();
+        eFunDef.accept(vEFunDef);
+        if(!vEFunDef.getAUnEffetDeBord() && valeurEFunDef != null && (!(valeurEFunDef.getValeur() instanceof Integer) || (Integer)valeurEFunDef.getValeur() >= 0))
+        {              
+            eFunDefAccepte = valeurEFunDef;
+        }
+        Valeur valeurExp = exp.accept(new VisiteurCalculValeurConstante());
+        VisiteurEffetDeBord vExp = new VisiteurEffetDeBord();
+        exp.accept(vExp);
+        if(!vExp.getAUnEffetDeBord() && valeurExp != null && (!(valeurExp.getValeur() instanceof Integer) || (Integer)valeurExp.getValeur() >= 0))
+        {
+            expAccepte = valeurExp;
+        }
+        if(eFunDefAccepte == null)
+        {
+            eFunDefAccepte = eFunDef.accept(this);
+        }
+        if(expAccepte == null)
+        {
+            expAccepte = exp.accept(this);
+        }
+        return new LetRec(new FunDef(funDef.getId(), funDef.getType(), funDef.getArgs(), eFunDefAccepte), expAccepte);
+    }
+    
+    @Override
+    public Exp visit(App e){   
+        return e;
+    }
+    
+    @Override
     public Exp visit(If e){   
-        If nouveauIf = new If(e.getE1().accept(this), e.getE2().accept(this), e.getE3().accept(this));
+        Exp e2Accepte = e.getE2().accept(this);
+        Exp e3Accepte = e.getE3().accept(this);
+        If nouveauIf = new If(e.getE1().accept(this), e2Accepte, e3Accepte);
         Valeur valeur =  nouveauIf.accept(new VisiteurCalculValeurConstante());  
         VisiteurEffetDeBord v = new VisiteurEffetDeBord();
         e.accept(v);       
-        return (valeur == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeur);
+        if(valeur == null || v.getAUnEffetDeBord())
+        {
+            return new If(e.getE1(), e2Accepte, e3Accepte);
+        }
+        else
+        {
+            return creerNoeudResultat(valeur);
+        }
     }
     
     private class VisiteurCalculValeurConstante implements ObjVisitor<Valeur>
@@ -283,7 +369,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp
 
         @Override
         public Valeur visit(LetRec e) {
-            throw new NotYetImplementedException();
+            return null;
         }
 
         @Override
