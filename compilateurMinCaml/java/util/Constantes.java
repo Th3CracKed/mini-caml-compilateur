@@ -14,7 +14,8 @@ public class Constantes {
     public static final int FP = 11;
     public static final int SP = 13;
     public static final int LR = 14;
-    public static final int PC = 15;
+    public static final int PC = 15;   
+    public static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{Constantes.LR};
 
     // fonction externes mincaml
     public static final String PRINT_INT_CAML = "print_int";

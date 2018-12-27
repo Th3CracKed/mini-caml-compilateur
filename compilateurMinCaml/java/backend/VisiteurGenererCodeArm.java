@@ -33,7 +33,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     //private static final int MAX_IMMEDIAT_SHIFTER_OPERAND = -MIN_IMMEDIAT_SHIFTER_OPERAND-1; // toutes les valeurs sur 8 bits sont valides pour le shifter operand (entre -2^7 et 2^7-1)
     
     private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{0, 1, 2, 3, Constantes.FP, Constantes.LR};
-    private static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{Constantes.LR};
 
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final HashMap<Integer, String> registreVersChaine;
@@ -347,32 +346,32 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         augmenterNiveauIndentation();
         changerEstInstructionMov(true);
         int tailleEnvironnement = e.accept(new VisiteurTailleEnvironnement())/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;
-        if(REGISTRE_SAUVEGARDES_APPELE.length >= 1)
+        if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
         {
             ecrireAvecIndentation("STMFD SP!, {");
-            for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELE.length; i++) {
+            for (int i = 0; i < Constantes.REGISTRE_SAUVEGARDES_APPELE.length; i++) {
                 if(i >= 1)
                 {
                     ecrire(", ");
                 }
-                ecrire(strReg(REGISTRE_SAUVEGARDES_APPELE[i]));
+                ecrire(strReg(Constantes.REGISTRE_SAUVEGARDES_APPELE[i]));
                 //loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
             }
             ecrire("}\n");
         }           
-        ecrireAvecIndentation("MOV FP, SP\n");
+        ecrireAvecIndentation("SUB FP, SP, #"+Constantes.TAILLE_MOT_MEMOIRE+"\n");
         ajouterValeurASP(-tailleEnvironnement);
         e.getAsmt().accept(this);
-        ecrireAvecIndentation("MOV SP, FP\n");
-        if(REGISTRE_SAUVEGARDES_APPELE.length >= 1)
+        ajouterValeurASP(tailleEnvironnement);
+        if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
         {
             ecrireAvecIndentation("LDMFD SP!, {");
-            for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELE.length; i++) {
+            for (int i = 0; i < Constantes.REGISTRE_SAUVEGARDES_APPELE.length; i++) {
                 if(i >= 1)
                 {
                     ecrire(", ");
                 }
-                ecrire(strReg(REGISTRE_SAUVEGARDES_APPELE[i]));
+                ecrire(strReg(Constantes.REGISTRE_SAUVEGARDES_APPELE[i]));
                 //loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
             }
             ecrire("}\n");
@@ -409,7 +408,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 visitOperande1Worker(e.getArguments().get(i));
                 ecrire("\n");
             } else {
-                loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
+                loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
             }
         }
         ecrireAvecIndentation("BL ");

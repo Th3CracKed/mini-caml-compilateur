@@ -316,7 +316,7 @@ public class Main {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }*/
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\nested_fun.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\ifthenelse2.ml", "-t"};
         lancerCompilateur(argv);
     }
 
@@ -450,7 +450,7 @@ public class Main {
                 /* ========= */ System.out.println("======================APRES LET");
                 expression.accept(new PrintVisitor());
                 System.out.println();
-                expression = expression.accept(new VisiteurInlineExpansion());
+                //expression = expression.accept(new VisiteurInlineExpansion());
                 /* ========= */ System.out.println("======================APRES INLINE");
                 expression.accept(new PrintVisitor());
                 System.out.println();

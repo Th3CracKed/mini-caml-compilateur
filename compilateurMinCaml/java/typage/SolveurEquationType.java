@@ -32,6 +32,7 @@ public class SolveurEquationType {
     
     public static LinkedList<EquationType> resoudreEquations(LinkedList<EquationType> listeEquations)
     {
+        //System.out.println("/////////////////// ETAPE RESOLUTION"); listeEquations.forEach(System.out::println);
         String messageMalType = "Le programme spécifié en entrée n'est pas correctement typé";
         if(listeEquations.isEmpty())
         {
@@ -39,7 +40,7 @@ public class SolveurEquationType {
         }
         else
         {          
-            EquationType teteListe = listeEquations.pop();   
+            EquationType teteListe = listeEquations.pop(); 
             if(teteListe.getT2() instanceof TVar)
             {
                 teteListe.echange();
@@ -54,7 +55,6 @@ public class SolveurEquationType {
                 }
                 else
                 {
-                    System.out.println("mal type : "+t1Tete+" = "+t2Tete);
                     throw new MyCompilationException(messageMalType);
                 }
             }
@@ -62,8 +62,8 @@ public class SolveurEquationType {
             {
                 if(t2Tete instanceof TFun)
                 {
-                    listeEquations.add(0, new EquationType(((TFun) t1Tete).getT1(), ((TFun) t2Tete).getT1()));
-                    listeEquations.add(0, new EquationType(((TFun) t1Tete).getT2(), ((TFun) t2Tete).getT2()));
+                    listeEquations.addFirst(new EquationType(((TFun) t1Tete).getT1(), ((TFun) t2Tete).getT1()));
+                    listeEquations.addFirst(new EquationType(((TFun) t1Tete).getT2(), ((TFun) t2Tete).getT2()));
                     return resoudreEquations(listeEquations);
                 }
                 else
@@ -77,9 +77,17 @@ public class SolveurEquationType {
                 for(EquationType equation : listeEquations)
                 {
                     remplacer(equation, t1TeteTVar, t2Tete);
+                }       
+                boolean contientVariable = contientVar(t2Tete);
+                if(contientVariable)
+                {
+                    listeEquations.addLast(teteListe);
                 }
-                LinkedList<EquationType> resultat = resoudreEquations(listeEquations);
-                resultat.addFirst(teteListe);
+                LinkedList<EquationType> resultat = resoudreEquations(listeEquations);                
+                if(!contientVariable)
+                {                    
+                    resultat.addFirst(teteListe);
+                }
                 return resultat;
             }     
             else
@@ -89,6 +97,30 @@ public class SolveurEquationType {
         }
     }
     
+    private static boolean contientVar(Type type)
+    {
+        if(type instanceof TVar)
+        {
+            return true;
+        }
+        else if(type instanceof TFun)
+        {
+            TFun typeTFun = (TFun)type;
+            return contientVar(typeTFun.getT1()) || contientVar(typeTFun.getT2());
+        }
+        else if(type instanceof TTuple)
+        {
+            throw new NotYetImplementedException();
+        }
+        else if(type instanceof TArray)
+        {
+            throw new NotYetImplementedException();
+        }
+        else
+        {
+            return false;
+        }
+    }
     private static void remplacer(EquationType equationDOrigine, TVar variable, Type valeurVariable)
     {
         Type t1 = equationDOrigine.getT1();
@@ -132,7 +164,7 @@ public class SolveurEquationType {
             }
             else
             {
-                remplacer(t1, variable, valeurVariable);
+                remplacer(t2, variable, valeurVariable);
             }
         }
         else if (typeDOrigine instanceof TTuple)

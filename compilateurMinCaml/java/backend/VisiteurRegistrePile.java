@@ -78,7 +78,7 @@ public class VisiteurRegistrePile implements VisiteurAsml {
             }
             else
             {
-                emplacement = new AdressePile((e.getArguments().size()-i)*Constantes.TAILLE_MOT_MEMOIRE);
+                emplacement = new AdressePile((e.getArguments().size()-i+Constantes.REGISTRE_SAUVEGARDES_APPELE.length)*Constantes.TAILLE_MOT_MEMOIRE);
             }
             emplacementsVar.put(e.getArguments().get(i).getIdString(), emplacement);
         }

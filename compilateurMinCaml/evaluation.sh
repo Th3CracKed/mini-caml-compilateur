@@ -268,7 +268,7 @@ print_int (f h)
 EOF
 
 TC="fortytwo.ml fortytwo_unit.ml let1.ml let2.ml let3.ml let4.ml let5_seq.ml let_spill.ml simple_fun.ml simple_fun2.ml simple_fun3.ml simple_fun4.ml\
-  fun_many_params.ml fun_many_param2.ml nested_fun.ml simple_rec.ml simple_rec2.ml bigint.ml array1.ml array2.ml array_unit1.ml array_unit2.ml array_bool_if.ml array_sum.ml couple.ml\
+  fun_many_params.ml fun_many_params2.ml nested_fun.ml simple_rec.ml simple_rec2.ml bigint.ml array1.ml array2.ml array_unit1.ml array_unit2.ml array_bool_if.ml array_sum.ml couple.ml\
  triple.ml ifthenelse1.ml ifthenelse2.ml ifthenelse3.ml ifthenelse4.ml ifthenelse5.ml ifthenelse6.ml closure.ml closure1.ml closure2.ml closure_hard.ml closure_array.ml closure_tuple.ml"
 TC_VALID_TYPECHECKING=$TC
 TC_INVALID_TYPECHECKING="bad1.ml bad2.ml bad3.ml bad4.ml bad5.ml bad6.ml bad7.ml bad8.ml bad9.ml bad10.ml bad11.ml"
