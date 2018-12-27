@@ -450,7 +450,7 @@ public class Main {
                 /* ========= */ System.out.println("======================APRES LET");
                 expression.accept(new PrintVisitor());
                 System.out.println();
-                //expression = expression.accept(new VisiteurInlineExpansion());
+                expression = expression.accept(new VisiteurInlineExpansion());
                 /* ========= */ System.out.println("======================APRES INLINE");
                 expression.accept(new PrintVisitor());
                 System.out.println();
