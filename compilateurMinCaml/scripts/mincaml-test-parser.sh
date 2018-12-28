@@ -21,6 +21,7 @@ function assertEquals()
     if [ $1 -ne $2 ]
     then
 	testReussi=0
+	echo ""
 	echo "le test $fichierATester ECHOUE. Cause : $3"
     fi
 }
@@ -30,7 +31,8 @@ function lancerTest()
 	fichierATester=$1
 	doitCompiler=0
 	testReussi=1
-	#printf "$fichierATester ---> "
+	echo ""
+	echo "lancement de $fichierATester"
 	if [[ "$fichierATester" =~ .*/invalid/.*\.ml ]]
 	then
 		codeRetourAttendu=1

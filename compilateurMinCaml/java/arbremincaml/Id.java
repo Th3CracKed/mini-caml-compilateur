@@ -16,6 +16,7 @@ public class Id {
         idUtilises.addAll(Constantes.MOTS_RESERVES_ASML);
         idUtilises.addAll(Constantes.FONCTION_EXTERNES_ASML);
         idUtilises.addAll(Constantes.FONCTION_EXTERNES_ARM);
+        idUtilises.addAll(Constantes.FONCTION_EXTERNES_PRIVEES_ARM);
         idUtilises.add(Constantes.NOM_FONCTION_MAIN_ASML);
         idUtilises.add(Constantes.NOM_FONCTION_MAIN_ARM);
         return idUtilises;

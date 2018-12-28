@@ -8,7 +8,6 @@ import arbremincaml.TFun;
 import arbremincaml.TTuple;
 import arbremincaml.TVar;
 import arbremincaml.Type;
-import java.util.HashMap;
 import java.util.LinkedList;
 import util.MyCompilationException;
 import util.NotYetImplementedException;
@@ -70,6 +69,31 @@ public class SolveurEquationType {
                 {
                     throw new MyCompilationException(messageMalType);
                 }
+            }
+            else if(t1Tete instanceof TTuple)
+            {
+                throw new NotYetImplementedException();
+                /*
+                if(t2Tete instanceof TTuple)
+                {
+                    List<Type> ts1 = ((TTuple) t1Tete).getTs();
+                    List<Type> ts2 = ((TTuple) t2Tete).getTs();
+                    int ts1Size = ts1.size();
+                    if(ts1Size != ts2.size())
+                    {
+                        throw new MyCompilationException(messageMalType);
+                    }
+                    for(int i = 0 ; i < ts1Size ; i++)
+                    {                        
+                        listeEquations.addFirst(new EquationType(ts1.get(i), ts2.get(i)));
+                    }
+                    return resoudreEquations(listeEquations);
+                }
+                else
+                {
+                    throw new MyCompilationException(messageMalType);
+                }
+                */
             }
             else if(t1Tete instanceof TVar)
             {

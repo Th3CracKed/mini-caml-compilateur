@@ -378,7 +378,9 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrireAvecIndentation("BX LR\n");
         }
         diminuerNiveauIndentation();
-        ecrire("\n");
+        if (!e.estMainFunDef()) {            
+            ecrire("\n");
+        }
     }
     
         @Override
@@ -472,17 +474,21 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     @Override
     public void visit(IntAsml e) {
         //chargerValeur(e, -1, -1);
+        int valeur = e.getValeur();
         if (estInstructionMov()) {
             ecrireAvecIndentation("LDR ");
             visitDestinationWorker();
             ecrire(", =" + e.getValeur()+"\n");
             strDestination();
         }
+        else if(!estShifterOpImmediatValide(valeur))
+        {
+            ecrire(strReg(NUM_REGISTRE_IMMEDIAT_INVALIDE));   
+        }
         else
         {
-            ecrire("#" + e.getValeur());            
+            ecrire("#" + valeur);            
         }
-        int valeur = e.getValeur();
     }
 
     @Override
@@ -498,6 +504,9 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             funDef.accept(this);
         }
         e.getMainFunDef().accept(this);
+        augmenterNiveauIndentation();
+        ecrireAvecIndentation("B "+Constantes.EXIT_ARM+"\n");
+        diminuerNiveauIndentation();
     }
 
     @Override

@@ -84,10 +84,13 @@ public interface VisiteurAsml {
 
     default void visit(MemLectureAsml e) {
         throw new NotYetImplementedException();
+        //UtilVisiteur.visitMemWorker(e, this);
     }
 
     default void visit(MemEcritureAsml e) {
         throw new NotYetImplementedException();
+        /*UtilVisiteur.visitMemWorker(e, this);
+        e.getValeurEcrite().accept(this);*/
     }
 
     default void visit(LetFloatAsml e) {

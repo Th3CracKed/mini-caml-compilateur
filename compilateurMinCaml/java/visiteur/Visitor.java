@@ -91,23 +91,36 @@ public interface Visitor {
     }
 
     default void visit(Tuple e){
-       throw new NotYetImplementedException();
+        throw new NotYetImplementedException();
+        /*
+       for(Exp composante : e.getEs())
+       {
+           composante.accept(this);
+       }*/
     }
 
     default void visit(LetTuple e){
         throw new NotYetImplementedException();
+        /*
+       e.getE1().accept(this);
+       e.getE2().accept(this);*/
     }
 
     default void visit(Array e){
         throw new NotYetImplementedException();
+        /*e.getE1().accept(this);
+        e.getE2().accept(this);*/
    }
 
     default void visit(Get e){
         throw new NotYetImplementedException();
+        //UtilVisiteur.visitAccesTabWorker(e, this);
     }
 
     default void visit(Put e){
         throw new NotYetImplementedException();
+        /*UtilVisiteur.visitAccesTabWorker(e, this);
+        e.getE3().accept(this);*/
     }
 }
 

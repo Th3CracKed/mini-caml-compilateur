@@ -60,4 +60,13 @@ public class Constantes {
     /*public static final String SIN_ARM = "_min_caml_sin";
     public static final String COS_ARM = "_min_caml_cos";*/
     public static final List<String> FONCTION_EXTERNES_ARM = Arrays.asList(PRINT_INT_ARM, PRINT_NEWLINE_ARM/*, SIN_ARM, COS_ARM */);
+    
+    public static final String EXIT_ARM = "min_caml_exit";
+    // fonctions presentes dans libMinCaml.S mais que l'utilisateur ne peut pas appeler comme les fonctions externes. Par exemple,
+    // min_caml_print_int appelle min_caml_print_string qui elle meme appelle stringlength mais le programmeur MinCaml ne peut pas appeler stringlength directement.
+    // min_caml_exit ne peut pas non plus etre appele explicitement mais est appele automatique a la fin de chaque programme
+    public static final List<String> FONCTION_EXTERNES_PRIVEES_ARM = Arrays.asList(EXIT_ARM, "stringlength", "stringlength_loop", "stringlength_first", 
+                                                                                   "min_caml_print_string", "hello_world_string", "min_caml_hello_world", 
+                                                                                   "min_caml_print_char", ".string_for_int", "stringofint", ".i2s_non_zero", 
+                                                                                   ".i2s_positive", ".i2s_exit", ".i2s_constants");
 }

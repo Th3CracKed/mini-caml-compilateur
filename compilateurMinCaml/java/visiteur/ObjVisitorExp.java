@@ -134,26 +134,37 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
 
     @Override
     public Exp visit(Tuple e){
-       throw new NotYetImplementedException();
+        throw new NotYetImplementedException();
+        /*
+        List<Exp> es = new ArrayList<>();
+        for(Exp composante : e.getEs())
+        {
+            es.add(composante.accept(this));
+        }
+        return new Tuple(es);*/
     }
 
     @Override
     public Exp visit(LetTuple e){
         throw new NotYetImplementedException();
+        //return new LetTuple(e.getIds(), e.getTs(), e.getE1().accept(this), e.getE2().accept(this));
     }
 
     @Override
     public Exp visit(Array e){
         throw new NotYetImplementedException();
+        //return new Array(e.getE1().accept(this), e.getE2().accept(this));
    }
 
     @Override
     public Exp visit(Get e){
         throw new NotYetImplementedException();
+        //return new Get(e.getE1().accept(this), e.getE2().accept(this));
     }
 
     @Override
     public Exp visit(Put e){
         throw new NotYetImplementedException();
+        //return new Put(e.getE1().accept(this), e.getE2().accept(this), e.getE3().accept(this));
     }
 }

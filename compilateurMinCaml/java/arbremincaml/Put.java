@@ -3,27 +3,16 @@ package arbremincaml;
 import visiteur.ObjVisitor;
 import visiteur.Visitor;
 
-public class Put extends Exp {
-    private final Exp e1;
-    private final Exp e2;
+public class Put extends AccesTableau {
     private final Exp e3;
 
     public Put(Exp e1, Exp e2, Exp e3) {
-        this.e1 = e1;
-        this.e2 = e2;
+        super(e1,e2);
         this.e3 = e3;
     }   
-
-    public Exp getE1() {
-        return e1;
-    }
-
-    public Exp getE2() {
-        return e2;
-    }
     
     public Exp getE3() {
-        return e2;
+        return e3;
     }
 
     @Override
