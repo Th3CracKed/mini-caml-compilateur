@@ -48,25 +48,26 @@ public class Id {
         return new Id(genIdString());
     }
     
-    private static String genIdStringWorker(String prefixe)
+    public static String genIdStringWithPrefix(String prefixe)
     {
         String idString = null;
         do
         {            
             x = x.add(BigInteger.ONE);
             idString = prefixe + x;
-        }while(idUtilises.contains(idString));        
+        }while(idUtilises.contains(idString));  
+        idUtilises.add(idString);      
         return idString;
     }
     
     public static String genIdString()
     {
-         return genIdStringWorker("v");
+         return genIdStringWithPrefix("v");
     }
     
     public static String genLabelString()
     {
-        return genIdStringWorker("_v");
+        return genIdStringWithPrefix("_f");
     }
 
 }

@@ -5,6 +5,7 @@ import arbremincaml.*;
 import java.util.HashMap;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import util.MyCompilationException;
 import util.NotYetImplementedException;
 import visiteur.DonneesOperateurBinaire;
@@ -22,11 +23,15 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         varConstante = new HashMap<>();
     }
     
+    private Valeur visitOpBinaireWorker(OperateurBinaire e, BiFunction<Exp, Exp, ? extends OperateurBinaire> constructeurOpBinaire)
+    {
+        OperateurBinaire opBinaire = constructeurOpBinaire.apply(e.getE1().accept(this), e.getE2().accept(this));
+        return opBinaire.accept(new VisiteurCalculValeurConstante());
+    }
+    
     @Override
-    public Exp visit(LE e) {   
-        DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);      
-        LE le = new LE(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
-        Valeur valeurLe =  le.accept(new VisiteurCalculValeurConstante());
+    public Exp visit(LE e) {     
+        Valeur valeurLe = visitOpBinaireWorker(e, LE::new);
         VisiteurEffetDeBord v = new VisiteurEffetDeBord();
         e.accept(v);
         return (valeurLe == null || v.getAUnEffetDeBord())?super.visit(e):valeurLe;
@@ -34,46 +39,19 @@ public class VisiteurConstantFolding extends ObjVisitorExp
     
     @Override
     public Exp visit(Eq e) {
-        DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);      
-        Eq eq = new Eq(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
-        Valeur valeurEq =  eq.accept(new VisiteurCalculValeurConstante());
+        Valeur valeurEq = visitOpBinaireWorker(e, Eq::new);
         VisiteurEffetDeBord v = new VisiteurEffetDeBord();
         e.accept(v);
         return (valeurEq == null || v.getAUnEffetDeBord())?super.visit(e):valeurEq;
-    }
-    
-   @Override
-    public Exp visit(Not e) {
-        Not not = new Not(UtilVisiteur.visitObjOpUnaireWorker(e, this));
-        Valeur valeurNot =  not.accept(new VisiteurCalculValeurConstante());
-        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
-        e.accept(v);
-        return (valeurNot == null || v.getAUnEffetDeBord())?super.visit(e):valeurNot;
-    }
-    
-    private Exp creerNoeudResultat(Valeur valeur)
-    {
-        Object val = valeur.getValeur();
-        if(val instanceof Integer && (Integer)val < 0)
-        {
-            Var var = new Var(Id.gen());
-            return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), new Neg(var));
-        }
-        else
-        {
-            return valeur;
-        }
-    }
-    
+    }    
+   
     @Override
-    public Exp visit(Neg e) {
-        Neg neg = new Neg(UtilVisiteur.visitObjOpUnaireWorker(e, this));
-        Valeur valeurNeg =  neg.accept(new VisiteurCalculValeurConstante());
+    public Exp visit(Add e) {        
+        Valeur valeurAdd =  visitOpBinaireWorker(e, Add::new);      
         VisiteurEffetDeBord v = new VisiteurEffetDeBord();
-        e.accept(v);
-        return (valeurNeg == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurNeg);
+        e.accept(v);    
+        return (valeurAdd == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurAdd);
     }
-    
     
     @Override
     public Exp visit(Sub e) {   
@@ -91,16 +69,41 @@ public class VisiteurConstantFolding extends ObjVisitorExp
             return creerNoeudResultat(valeurSub);
         }
     }
-   
-    @Override
-    public Exp visit(Add e) {
-        
-        DonneesOperateurBinaire<Exp> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this); 
-        Add newAdd =   new Add(donneesOpBinaire.getE1(),donneesOpBinaire.getE2());
-        Valeur valeurAdd =  newAdd.accept(new VisiteurCalculValeurConstante());     
+    
+    private Valeur visitOpUnaireWorker(OperateurUnaire e, Function<Exp, ? extends OperateurUnaire> constructeurOpUnaire)
+    {
+        OperateurUnaire opUnaire = constructeurOpUnaire.apply(e.getE().accept(this));
+        return opUnaire.accept(new VisiteurCalculValeurConstante());
+    }
+    
+   @Override
+    public Exp visit(Not e) {
+        Valeur valeurNot =  visitOpUnaireWorker(e, Not::new);
         VisiteurEffetDeBord v = new VisiteurEffetDeBord();
-        e.accept(v);    
-        return (valeurAdd == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurAdd);
+        e.accept(v);
+        return (valeurNot == null || v.getAUnEffetDeBord())?super.visit(e):valeurNot;
+    }
+    
+    @Override
+    public Exp visit(Neg e) {
+        Valeur valeurNeg =  visitOpUnaireWorker(e, Neg::new);
+        VisiteurEffetDeBord v = new VisiteurEffetDeBord();
+        e.accept(v);
+        return (valeurNeg == null || v.getAUnEffetDeBord())?super.visit(e):creerNoeudResultat(valeurNeg);
+    }
+    
+    private Exp creerNoeudResultat(Valeur valeur)
+    {
+        Object val = valeur.getValeur();
+        if(val instanceof Integer && (Integer)val < 0)
+        {
+            Var var = new Var(Id.gen());
+            return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), new Neg(var));
+        }
+        else
+        {
+            return valeur;
+        }
     }
      
    @Override
@@ -240,7 +243,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp
     {        
         @Override
         public Valeur visit(Not e) {
-            Valeur valeur = UtilVisiteur.visitObjOpUnaireWorker(e, this);
+            Valeur valeur = e.getE().accept(this);
             if(valeur == null)
             {
                 return null;
@@ -251,7 +254,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp
 
         @Override
         public Valeur visit(Neg e) {
-            Valeur valeur = UtilVisiteur.visitObjOpUnaireWorker(e, this);
+            Valeur valeur = e.getE().accept(this);
             if(valeur == null)
             {
                 return null;

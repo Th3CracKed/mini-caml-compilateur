@@ -3,6 +3,8 @@ package visiteur;
 import arbremincaml.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import util.NotYetImplementedException;
 
 public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
@@ -26,26 +28,44 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
         throw new NotYetImplementedException();
     }
     
+    private Exp visitOpUnaireWorker(OperateurUnaire e, Function<Exp, ? extends OperateurUnaire> constructeurOpUnaire)
+    {
+        return constructeurOpUnaire.apply(e.getE().accept(this));
+    }
+    
     @Override
     public Exp visit(Not e) { 
-        return new Not(UtilVisiteur.visitObjOpUnaireWorker(e, this));
+        return visitOpUnaireWorker(e, Not::new);
     }
 
     @Override
     public Exp visit(Neg e) {
-        return new Neg(UtilVisiteur.visitObjOpUnaireWorker(e, this));  
+        return visitOpUnaireWorker(e, Neg::new);
+    }
+    
+    private Exp visitOpBinaireWorker(OperateurBinaire e, BiFunction<Exp, Exp, ? extends OperateurBinaire> constructeurOpBinaire)
+    {
+        return constructeurOpBinaire.apply(e.getE1().accept(this), e.getE2().accept(this));
     }
     
     @Override
     public Exp visit(Add e) {
-        DonneesOperateurBinaire<Exp> donneesOpBin = new DonneesOperateurBinaire<>(e, this);        
-        return new Add(donneesOpBin.getE1(), donneesOpBin.getE2());   
+        return visitOpBinaireWorker(e, Add::new);
     }
 
     @Override
     public Exp visit(Sub e) {
-	DonneesOperateurBinaire<Exp> donneesOpBin = new DonneesOperateurBinaire<>(e, this);         
-        return new Sub(donneesOpBin.getE1(), donneesOpBin.getE2());  
+	return visitOpBinaireWorker(e, Sub::new); 
+    }
+
+    @Override
+    public Exp visit(Eq e){
+        return visitOpBinaireWorker(e, Eq::new); 
+    }
+
+    @Override
+    public Exp visit(LE e){
+        return visitOpBinaireWorker(e, LE::new); 
     }
 
     @Override
@@ -71,18 +91,6 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
     @Override
     public Exp visit(FDiv e){
         throw new NotYetImplementedException();
-    }
-
-    @Override
-    public Exp visit(Eq e){
-        DonneesOperateurBinaire<Exp> donneesOpBin = new DonneesOperateurBinaire<>(e, this);         
-        return new Eq(donneesOpBin.getE1(), donneesOpBin.getE2()); 
-    }
-
-    @Override
-    public Exp visit(LE e){
-        DonneesOperateurBinaire<Exp> donneesOpBin = new DonneesOperateurBinaire<>(e, this);        
-        return new LE(donneesOpBin.getE1(), donneesOpBin.getE2()); 
     }
 
     @Override

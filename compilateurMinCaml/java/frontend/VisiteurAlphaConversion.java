@@ -45,12 +45,8 @@ public class VisiteurAlphaConversion implements Visitor {
     public void visit(Let e) {   
       Id id = e.getId();
       String ancienIdString = id.getIdString();
-      String nouvelIdString = ancienIdString;
+      String nouvelIdString = Id.genIdString();
       String ancienRenommage = idsVariable.get(ancienIdString);
-      if(ancienRenommage != null || ancienIdString.startsWith("_"))
-      {
-          nouvelIdString = Id.genIdString();
-      }
       id.setIdString(nouvelIdString);
       idsVariable.put(ancienIdString, nouvelIdString);   
       e.getE1().accept(this);
@@ -63,24 +59,16 @@ public class VisiteurAlphaConversion implements Visitor {
       FunDef funDef = e.getFd();
       Id id = funDef.getId();
       String ancienIdString = id.getIdString();
-      String nouvelIdString = ancienIdString;
+      String nouvelIdString = Id.genLabelString();
       String ancienRenommage = idsVariable.get(ancienIdString);
-      if(ancienRenommage != null || !ancienIdString.startsWith("_"))
-      {
-          nouvelIdString = Id.genLabelString();
-      }
       id.setIdString(nouvelIdString);
       idsVariable.put(ancienIdString, nouvelIdString);   
       HashMap<String, String> anciensIdsStringArgs = new HashMap<>();
       for(Id argument : funDef.getArgs())
       {
             String ancienIdStringArg = argument.getIdString();
-            String nouvelIdStringArg = ancienIdStringArg;
+            String nouvelIdStringArg = Id.genIdString();
             String ancienRenommageArg = idsVariable.get(ancienIdStringArg);
-            if(ancienRenommageArg != null || ancienIdStringArg.startsWith("_"))
-            {
-                nouvelIdStringArg = Id.genIdString();
-            }
             argument.setIdString(nouvelIdStringArg);
             idsVariable.put(ancienIdStringArg, nouvelIdStringArg);
             anciensIdsStringArgs.put(ancienIdStringArg, ancienRenommageArg);

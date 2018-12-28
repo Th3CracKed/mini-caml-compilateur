@@ -316,7 +316,7 @@ public class Main {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }*/
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\ifthenelse2.ml", "-t"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\simple_rec2.ml", "-o", "out.s"};
         lancerCompilateur(argv);
     }
 
@@ -482,15 +482,11 @@ public class Main {
                     VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile();
                     arbreAsml.accept(visAllocationRegistre);/* ========= */ System.out.println("\n======================EMPLACEMENTS DES VARIABLES");
                     System.out.println(visAllocationRegistre.getEmplacementsVar());
-                    System.out.println();
-                    VisiteurListeLabels visListeLabels = new VisiteurListeLabels();
-                    arbreAsml.accept(visListeLabels);
-                    /* ========= */ System.out.println("======================LABELS");
-                    System.out.println(visListeLabels.getLabels());
+                    System.out.println();                    
                     PrintStream fichierSortieARM = new PrintStream(nomFichierSortie);
-                    arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), fichierSortieARM, visListeLabels.getLabels()));
+                    arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), fichierSortieARM));
                     /* ========= */ System.out.println("======================ARM");
-                    arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), System.out, visListeLabels.getLabels()));
+                    arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), System.out));
                 }
             }
         }

@@ -1,6 +1,7 @@
 package backend;
 
 import arbreasml.*;
+import arbremincaml.Id;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -36,13 +37,11 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final HashMap<Integer, String> registreVersChaine;
-    private final HashSet<String> labels;
     private final Stack<EmplacementMemoire> emplacementDestination;
     private int numRegistre;
-    private BigInteger numLabelSuivant;
     private final Stack<Boolean> pileEstInstructionMov;
 
-    public VisiteurGenererCodeArm(HashMap<String, EmplacementMemoire> emplacementsMemoire, PrintStream fichierSortie, HashSet<String> labels) {
+    public VisiteurGenererCodeArm(HashMap<String, EmplacementMemoire> emplacementsMemoire, PrintStream fichierSortie) {
         super(fichierSortie);
         this.emplacementsMemoire = emplacementsMemoire;
         this.registreVersChaine = new HashMap<>();
@@ -52,8 +51,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         registreVersChaine.put(Constantes.PC, PC);
         this.emplacementDestination = new Stack();
         changerDestination(new Registre(0));
-        this.labels = labels;
-        this.numLabelSuivant = BigInteger.ZERO;
         pileEstInstructionMov = new Stack<>();
     }
 
@@ -558,20 +555,9 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         throw new NotYetImplementedException();
     }
 
-    private String genererLabel(String prefixe) {
-        String label = null;
-        do {
-            label = prefixe + numLabelSuivant;
-            // on utilise BigInteger au lieu de int pour eviter d'avoir des labels de meme nom si on en cree au moins Integer.MAX_VALUE (même si c'est peu probable d'en créer autant)
-            numLabelSuivant = numLabelSuivant.add(BigInteger.ONE);
-        } while (labels.contains(label));
-        labels.add(label);
-        return label;
-    }
-
     private void visitIfEqIntWorker(IfIntAsml e, String instBranchementElse) {
-        String labelElse = genererLabel("sinon");
-        String labelEndIf = genererLabel("finSi");
+        String labelElse = Id.genIdStringWithPrefix("sinon");
+        String labelEndIf = Id.genIdStringWithPrefix("finSi");
         VarAsml op1 = e.getE1();
         VarOuIntAsml op2 = e.getE2();
         chargerValeur(op1, NUM_REGISTRE_OPERANDE1, Constantes.FP);
@@ -638,7 +624,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
         @Override
         public Integer visit(LetAsml e) {
-            return Constantes.TAILLE_MOT_MEMOIRE + e.getE2().accept(this);
+            return Constantes.TAILLE_MOT_MEMOIRE + Math.max(e.getE1().accept(this), e.getE2().accept(this));
         }
 
         @Override

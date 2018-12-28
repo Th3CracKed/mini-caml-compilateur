@@ -2,7 +2,9 @@ package frontend;
 
 import arbremincaml.*;
 import java.util.LinkedList;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import util.NotYetImplementedException;
 import visiteur.ObjVisitorExp;
 
@@ -28,41 +30,20 @@ public class KNormVisitor extends ObjVisitorExp {
         //return e;
     }
 
-    private class CreateurNoeudOpUnaire {
-
-        private final Exp exp;
-        private final Id newId;
-        private final Type newtype;
-        private final Var var;
-
-        public CreateurNoeudOpUnaire(OperateurUnaire e) {
-            this.exp = e.getE().accept(KNormVisitor.this);
-            this.newId = Id.gen();
-            this.newtype = Type.gen();
-            this.var = new Var(newId);
-        }
-
-        public Var getVar() {
-            return var;
-        }
-
-        public Let creerNouveauNoeud(OperateurUnaire opUnaire) {
-            return new Let(newId, newtype, exp, opUnaire);
-        }
+    private Let visitOpUnaireWorker(OperateurUnaire e, Function<Exp, ? extends OperateurUnaire> constructeurOpUnaire)
+    {
+        Var var = new Var(Id.gen());
+        return new Let(var.getId(), Type.gen(), e.getE().accept(this), constructeurOpUnaire.apply(var));
     }
-
+    
     @Override
     public Let visit(Not e) {
-        CreateurNoeudOpUnaire resWorker = new CreateurNoeudOpUnaire(e);
-        Not not = new Not(resWorker.getVar());
-        return resWorker.creerNouveauNoeud(not);
+        return visitOpUnaireWorker(e, Not::new);
     }
 
     @Override
     public Let visit(Neg e) {
-        CreateurNoeudOpUnaire resWorker = new CreateurNoeudOpUnaire(e);
-        Neg neg = new Neg(resWorker.getVar());
-        return resWorker.creerNouveauNoeud(neg);
+        return visitOpUnaireWorker(e, Neg::new);
     }
 
     private class CreateurNoeudOpBinaire {
@@ -101,28 +82,34 @@ public class KNormVisitor extends ObjVisitorExp {
         }
     }
 
+    private Let visitOpBinaireWorker(OperateurBinaire e, BiFunction<Exp, Exp, ? extends OperateurBinaire> constructeurOpBinaire)
+    {
+        Var var1 = new Var(Id.gen());
+        Var var2 = new Var(Id.gen());
+        Exp e1 = e.getE1().accept(this);
+        Exp e2 = e.getE2().accept(this);
+        return new Let(var1.getId(), Type.gen(), e1,
+                    new Let(var2.getId(), Type.gen(), e2, constructeurOpBinaire.apply(var1, var2)));
+    }
+    
     @Override
     public Let visit(Add e) {
-        CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
-        return result.creerNoeud(new Add(result.getNewVar1(), result.getNewVar2()));
+        return visitOpBinaireWorker(e, Add::new);
     }
 
     @Override
     public Let visit(Sub e) {
-        CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
-        return result.creerNoeud(new Sub(result.getNewVar1(), result.getNewVar2()));
+        return visitOpBinaireWorker(e, Sub::new);
     }
 
     @Override
     public Let visit(Eq e) {
-        CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
-        return result.creerNoeud(new Eq(result.getNewVar1(), result.getNewVar2()));
+        return visitOpBinaireWorker(e, Eq::new);
     }
 
     @Override
     public Let visit(LE e) {
-        CreateurNoeudOpBinaire result = new CreateurNoeudOpBinaire(e);
-        return result.creerNoeud(new LE(result.getNewVar1(), result.getNewVar2()));
+        return visitOpBinaireWorker(e, LE::new);
     }
 
     private Exp visitIfWorker(Exp e1, Exp e2, Exp e3, BinaryOperator<Exp> createurOpRel) {
@@ -137,17 +124,17 @@ public class KNormVisitor extends ObjVisitorExp {
         Exp e1 = e.getE1().accept(this);
         Exp e2 = e.getE2().accept(this);
         Exp e3 = e.getE3().accept(this);
-        BinaryOperator<Exp> createurOpRel = (a,b)->new Eq(a,b);
+        BinaryOperator<Exp> createurEq = Eq::new;
         if (e1 instanceof Eq) {
-            return visitIfWorker(e1, e2, e3, createurOpRel);
+            return visitIfWorker(e1, e2, e3, createurEq);
         }
         else if(e1 instanceof LE)
         {
-            return visitIfWorker(e1, e2, e3, (a,b)->new LE(a,b));
+            return visitIfWorker(e1, e2, e3, LE::new);
         }
         else
         {
-            return visitIfWorker(new Eq(e1, new Bool(true)), e2, e3, createurOpRel); 
+            return visitIfWorker(new Eq(e1, new Bool(true)), e2, e3, createurEq); 
         }
     }
 
