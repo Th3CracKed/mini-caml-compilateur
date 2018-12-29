@@ -49,7 +49,7 @@ public interface VisiteurAsml {
     }
 
     default void visit(NewAsml e) {
-        throw new NotYetImplementedException();
+        e.getE().accept(this);
     }
 
     default void visit(FNegAsml e) {
@@ -83,14 +83,12 @@ public interface VisiteurAsml {
     }
 
     default void visit(MemLectureAsml e) {
-        throw new NotYetImplementedException();
-        //UtilVisiteur.visitMemWorker(e, this);
+        UtilVisiteur.visitMemWorker(e, this);
     }
 
     default void visit(MemEcritureAsml e) {
-        throw new NotYetImplementedException();
-        /*UtilVisiteur.visitMemWorker(e, this);
-        e.getValeurEcrite().accept(this);*/
+        UtilVisiteur.visitMemWorker(e, this);
+        e.getValeurEcrite().accept(this);
     }
 
     default void visit(LetFloatAsml e) {

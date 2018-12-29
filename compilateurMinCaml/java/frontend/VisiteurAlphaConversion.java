@@ -1,10 +1,7 @@
 package frontend;
 
-import arbreasml.FunDefConcreteAsml;
 import arbremincaml.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import util.Constantes;
 import visiteur.Visitor;
 

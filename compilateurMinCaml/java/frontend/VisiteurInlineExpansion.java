@@ -186,17 +186,22 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
 
         @Override
         public Integer visit(Array e) {
-            throw new NotYetImplementedException();
+            return 1 + e.getE1().accept(this) + e.getE2().accept(this);
         }
 
+        private Integer visitAccesTableauWorker(AccesTableau e)
+        {
+            return 1 + e.getE1().accept(this) + e.getE2().accept(this);
+        }
+        
         @Override
         public Integer visit(Get e) {
-            throw new NotYetImplementedException();
+            return visitAccesTableauWorker(e);
         }
 
         @Override
         public Integer visit(Put e) {
-            throw new NotYetImplementedException();
+            return visitAccesTableauWorker(e) + e.getE3().accept(this);
         }
         
     }

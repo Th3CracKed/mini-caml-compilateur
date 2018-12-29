@@ -15,7 +15,7 @@ public class Constantes {
     public static final int SP = 13;
     public static final int LR = 14;
     public static final int PC = 15;   
-    public static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{Constantes.LR};
+    public static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{4,5,6,7,8,9,10,FP};
 
     // fonction externes mincaml
     public static final String PRINT_INT_CAML = "print_int";
@@ -39,8 +39,8 @@ public class Constantes {
     // fonction externes asml
     public static final String PRINT_INT_ASML = "_min_caml_print_int";
     public static final String PRINT_NEWLINE_ASML = "_min_caml_print_newline";
-    /*public static final String CREATE_ARRAY_ASML = "_min_caml_create_array";
-    public static final String CREATE_FLOAT_ARRAY_ASML = "_min_caml_create_float_array";
+    public static final String CREATE_ARRAY_ASML = "_min_caml_create_array";
+    /*public static final String CREATE_FLOAT_ARRAY_ASML = "_min_caml_create_float_array";
     public static final String SIN_ASML = "_min_caml_sin";
     public static final String COS_ASML = "_min_caml_cos";
     public static final String SQRT_ASML = "_min_caml_sqrt";
@@ -57,15 +57,18 @@ public class Constantes {
     // fonction externes arm
     public static final String PRINT_INT_ARM = "min_caml_print_int";
     public static final String PRINT_NEWLINE_ARM = "min_caml_print_newline";
-    /*public static final String SIN_ARM = "_min_caml_sin";
-    public static final String COS_ARM = "_min_caml_cos";*/
-    public static final List<String> FONCTION_EXTERNES_ARM = Arrays.asList(PRINT_INT_ARM, PRINT_NEWLINE_ARM/*, SIN_ARM, COS_ARM */);
+    public static final String CREATE_ARRAY_ARM = CREATE_ARRAY_ASML;
+    /*public static final String CREATE_FLOAT_ARRAY_ARM = CREATE_FLOAT_ARRAY_ASML;
+    /*public static final String SIN_ARM = SIN_ASML;
+    public static final String COS_ARM = COS_ASML;*/
+    public static final List<String> FONCTION_EXTERNES_ARM = Arrays.asList(PRINT_INT_ARM, PRINT_NEWLINE_ARM, CREATE_ARRAY_ARM/*, CREATE_FLOAT_ARRAY_ARM, SIN_ARM, COS_ARM */);
     
     public static final String EXIT_ARM = "min_caml_exit";
+    public static final String CREATE_ARRAY_BOUCLE_ARM = "create_array_boucle";
     // fonctions presentes dans libMinCaml.S mais que l'utilisateur ne peut pas appeler comme les fonctions externes. Par exemple,
     // min_caml_print_int appelle min_caml_print_string qui elle meme appelle stringlength mais le programmeur MinCaml ne peut pas appeler stringlength directement.
     // min_caml_exit ne peut pas non plus etre appele explicitement mais est appele automatique a la fin de chaque programme
-    public static final List<String> FONCTION_EXTERNES_PRIVEES_ARM = Arrays.asList(EXIT_ARM, "stringlength", "stringlength_loop", "stringlength_first", 
+    public static final List<String> FONCTION_EXTERNES_PRIVEES_ARM = Arrays.asList(EXIT_ARM, CREATE_ARRAY_BOUCLE_ARM, "stringlength", "stringlength_loop", "stringlength_first", 
                                                                                    "min_caml_print_string", "hello_world_string", "min_caml_hello_world", 
                                                                                    "min_caml_print_char", ".string_for_int", "stringofint", ".i2s_non_zero", 
                                                                                    ".i2s_positive", ".i2s_exit", ".i2s_constants");

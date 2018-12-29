@@ -1,9 +1,13 @@
 package arbremincaml;
 
+import java.math.BigInteger;
+
 public abstract class Type {
-    private static int x = 0;
+    private static BigInteger x = BigInteger.ZERO;
     public static Type gen() {
-        return new TVar("?" + x++);
+        Type resultat = new TVar("?" + x);
+        x = x.add(BigInteger.ONE);
+        return resultat;
     }
     
     @Override

@@ -54,6 +54,7 @@ public class SolveurEquationType {
                 }
                 else
                 {
+                    System.out.println(t1Tete+" = "+t2Tete);
                     throw new MyCompilationException(messageMalType);
                 }
             }
@@ -94,6 +95,18 @@ public class SolveurEquationType {
                     throw new MyCompilationException(messageMalType);
                 }
                 */
+            }
+            else if(t1Tete instanceof TArray)
+            {
+                if(t2Tete instanceof TArray)
+                {
+                    listeEquations.addFirst(new EquationType(((TArray) t1Tete).getT(), ((TArray) t2Tete).getT()));
+                    return resoudreEquations(listeEquations);
+                }
+                else
+                {
+                    throw new MyCompilationException(messageMalType);
+                }
             }
             else if(t1Tete instanceof TVar)
             {
@@ -138,7 +151,7 @@ public class SolveurEquationType {
         }
         else if(type instanceof TArray)
         {
-            throw new NotYetImplementedException();
+            return contientVar(((TArray)type).getT());
         }
         else
         {
@@ -197,7 +210,16 @@ public class SolveurEquationType {
         }
         else if (typeDOrigine instanceof TArray)
         {
-            throw new NotYetImplementedException();
+            TArray typeDorigineArray = (TArray)typeDOrigine;
+            Type t = typeDorigineArray.getT();
+            if(TVarEtEgales(t, variable))
+            {
+                typeDorigineArray.setT(valeurVariable);
+            }
+            else
+            {
+                remplacer(t, variable, valeurVariable);
+            }
         }
     }
 }

@@ -97,11 +97,6 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
     }
 
     @Override
-    public void visit(NewAsml e) {
-        throw new NotYetImplementedException();
-    }
-
-    @Override
     public void visit(FNegAsml e) {
         throw new NotYetImplementedException();
     }
@@ -146,16 +141,33 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
     @Override
     public void visit(CallClosureAsml e) {
         throw new NotYetImplementedException();
-    }
+    }    
 
     @Override
+    public void visit(NewAsml e) {
+        ecrireAvecIndentation("new ");
+        e.getE().accept(this);
+    }
+
+    private void visitMemWorker(MemAsml e)
+    {
+        ecrireAvecIndentation("mem(");
+        e.getTableau().accept(this);
+        ecrire(" + ");
+        e.getIndice().accept(this);
+        ecrire(")");
+    }
+    
+    @Override
     public void visit(MemLectureAsml e) {
-        throw new NotYetImplementedException();
+        visitMemWorker(e);
     }
 
     @Override
     public void visit(MemEcritureAsml e) {
-        throw new NotYetImplementedException();
+        visitMemWorker(e);
+        ecrire(" <- ");
+        e.getValeurEcrite().accept(this);
     }
 
     @Override

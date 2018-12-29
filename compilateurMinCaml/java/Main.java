@@ -299,8 +299,6 @@ import arbreasml.*;
 import backend.*;
 import frontend.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import typage.*;
@@ -311,12 +309,12 @@ public class Main {
     private static final int CODE_RETOUR_ERREUR = 1;
 
     static public void main(String argv[]) {
-        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid");
+        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid");
         for (File fichier : dossierTests.listFiles()) {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }*/
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\simple_rec2.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\array_sum.ml", "-o", "out.s"};
         lancerCompilateur(argv);
     }
 

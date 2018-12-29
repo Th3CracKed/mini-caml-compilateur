@@ -3,9 +3,8 @@ package backend;
 import arbreasml.*;
 import arbremincaml.Id;
 import java.io.PrintStream;
-import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Stack;
 import util.Constantes;
 import util.GenerateurDeCode;
@@ -15,11 +14,14 @@ import visiteur.VisiteurAsml;
 
 public class VisiteurGenererCodeArm extends GenerateurDeCode implements VisiteurAsml {
 
+    private static final int TAILLE_ZONE_ALLOCATION_DYNAMIQUE = 10000;
     private static final int NUM_REGISTRE_DESTINATION = 4;
     private static final int NUM_REGISTRE_OPERANDE1 = 4;
     private static final int NUM_REGISTRE_OPERANDE2 = 5;
     private static final int NUM_REGISTRE_IMMEDIAT_INVALIDE = 6;
     private static final int NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR = 7;
+    private static final int NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE = 8;
+    
     private static final String FP = "FP";
     private static final String SP = "SP";
     private static final String LR = "LR";
@@ -33,7 +35,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     //private static final int MIN_IMMEDIAT_SHIFTER_OPERAND = -(int) Math.pow(2, 7);
     //private static final int MAX_IMMEDIAT_SHIFTER_OPERAND = -MIN_IMMEDIAT_SHIFTER_OPERAND-1; // toutes les valeurs sur 8 bits sont valides pour le shifter operand (entre -2^7 et 2^7-1)
     
-    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{0, 1, 2, 3, Constantes.FP, Constantes.LR};
+    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3, NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE, 12, Constantes.LR};
 
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final HashMap<Integer, String> registreVersChaine;
@@ -217,7 +219,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         if (emplacement instanceof AdressePile) {
             int decalage = ((AdressePile) emplacement).getDecalage();
             String strDecalage = null;
-            if (decalage >= MIN_DECALAGE_LOAD_STORE && decalage <= MAX_DECALAGE_LOAD_STORE) {
+            if (estDecalageImmediatLoadStoreValide(decalage)) {
                 strDecalage = "#" + decalage;
             } else // si la valeur du decalage est trop grande pour être une valeur immediate, il faut la copier dans un registre
             {
@@ -341,6 +343,10 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         }
         ecrire(":\n");
         augmenterNiveauIndentation();
+        if (e.estMainFunDef()) {
+            ajouterValeurASP(-TAILLE_ZONE_ALLOCATION_DYNAMIQUE);
+            ecrireAvecIndentation("MOV "+strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE)+", "+SP+"\n");
+        }
         changerEstInstructionMov(true);
         int tailleEnvironnement = e.accept(new VisiteurTailleEnvironnement())/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;
         if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
@@ -374,17 +380,18 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrire("}\n");
         }
         restaurerEstInstructionMov();
-        if (!e.estMainFunDef()) {
-            ecrireAvecIndentation("BX LR\n");
+        if (e.estMainFunDef()) {
+            ajouterValeurASP(TAILLE_ZONE_ALLOCATION_DYNAMIQUE);
+        }
+        else
+        {            
+            ecrireAvecIndentation("BX LR\n\n");
         }
         diminuerNiveauIndentation();
-        if (!e.estMainFunDef()) {            
-            ecrire("\n");
-        }
     }
     
-        @Override
-    public void visit(CallAsml e) {
+    public void visitCallWorker(CallAsml e, VarOuIntAsml param0, VarOuIntAsml param1)
+    {
         int tailleAEmpiler = (/*REGISTRE_SAUVEGARDES_APPELANT.length + */Math.max(0, (e.getArguments().size() - Constantes.REGISTRES_PARAMETRES.length))) * Constantes.TAILLE_MOT_MEMOIRE;
         ajouterValeurASP(-tailleAEmpiler);
         if(REGISTRE_SAUVEGARDES_APPELANT.length >= 1)
@@ -400,30 +407,39 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             }
             ecrire("}\n");
         }  
-        for (int i = 0; i < e.getArguments().size(); i++) {
-            chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
+        for (int i = 0; i < e.getArguments().size(); i++) {   
             if (i <= Constantes.REGISTRES_PARAMETRES.length - 1) {
-                ecrireAvecIndentation("MOV R" + Constantes.REGISTRES_PARAMETRES[i] + ", ");
-                visitOperande1Worker(e.getArguments().get(i));
-                ecrire("\n");
+                if((i == 0 && param0 != null) || (i == 1 && param1 != null))
+                {
+                    VarOuIntAsml param = (i == 0)?param0:param1;      
+                    if(param instanceof IntAsml)
+                    {                        
+                        ecrireAvecIndentation("LDR " + strReg(Constantes.REGISTRES_PARAMETRES[i]) + ", ="+((IntAsml)param).getValeur()+"\n");
+                    }
+                    else // if(param instanceof VarAsml)
+                    {
+                        chargerValeur(param, Constantes.REGISTRES_PARAMETRES[i], Constantes.FP);
+                    }
+                }
+                else
+                {      
+                    chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
+                    ecrireAvecIndentation("MOV " + strReg(Constantes.REGISTRES_PARAMETRES[i]) + ", ");
+                    visitOperande1Worker(e.getArguments().get(i));
+                    ecrire("\n");
+                }
             } else {
+                chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
                 loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
-            }
+            }            
         }
         ecrireAvecIndentation("BL ");
         if (e.getIdString().equals(Constantes.PRINT_INT_ASML)) {
             ecrire(Constantes.PRINT_INT_ARM);
         } else if (e.getIdString().equals(Constantes.PRINT_NEWLINE_ASML)) {
             ecrire(Constantes.PRINT_NEWLINE_ARM);
-        }  /*else if (e.getIdString().equals(Constantes.CREATE_ARRAY_ASML)) {
-            throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.CREATE_FLOAT_ARRAY_ASML)) {
-            throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.SIN_ASML)) {
-            ecrire(Constantes.SIN_ARM);throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.COS_ASML)) {
-            ecrire(Constantes.COS_ARM);throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.SQRT_ASML)) {
+        }  // il n'y a rien a faire pour les fonctions CREATE_ARRAY_ASML, CREATE_FLOAT_ARRAY_ASML,SIN_ASML et COS_ASML qui ont le meme nom en asml et en arm
+        /*else if (e.getIdString().equals(Constantes.SQRT_ASML)) {
             throw new NotYetImplementedException();
         } else if (e.getIdString().equals(Constantes.ABS_FLOAT_ASML)) {
             throw new NotYetImplementedException();
@@ -468,7 +484,11 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         ecrire(", " + strReg(NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR) + "\n");
         strDestination();
         ajouterValeurASP(tailleAEmpiler);
-
+    }
+    
+        @Override
+    public void visit(CallAsml e) {
+        visitCallWorker(e, null, null);
     }
 
     @Override
@@ -500,6 +520,25 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     public void visit(ProgrammeAsml e) {
         ecrire(".text\n");
         ecrire(".global " + Constantes.NOM_FONCTION_MAIN_ARM + "\n");
+        ecrire(Constantes.CREATE_ARRAY_ARM+":\n");
+        augmenterNiveauIndentation();
+        
+        String strRegProchainAdrAllouee = strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE);
+        String strRegParam0Retour = strReg(Constantes.REGISTRE_VALEUR_RETOUR);
+        String strRegTailleRestante = strReg(Constantes.REGISTRES_PARAMETRES[2]);
+        ecrireAvecIndentation("CMP "+strRegParam0Retour+", #"+0+"\n");
+        ecrireAvecIndentation("BLE "+Constantes.EXIT_ARM+"\n"); // arret du programme si l'allocation d'un tableau de taille inferieure ou egale 0 est demandee
+        ecrireAvecIndentation("MOV "+strRegTailleRestante+", "+strRegParam0Retour+"\n");
+        ecrireAvecIndentation("MOV "+strRegParam0Retour+", "+strRegProchainAdrAllouee+"\n");
+        ecrire(Constantes.CREATE_ARRAY_BOUCLE_ARM+":\n");
+        ecrireAvecIndentation("STR "+strReg(Constantes.REGISTRES_PARAMETRES[1])+", ["+strRegProchainAdrAllouee+"]\n");
+        ecrireAvecIndentation("SUB "+strRegTailleRestante+", "+strRegTailleRestante+", #"+1+"\n");
+        ecrireAvecIndentation("ADD "+strRegProchainAdrAllouee+", "+strRegProchainAdrAllouee+", #"+Constantes.TAILLE_MOT_MEMOIRE+"\n");
+        ecrireAvecIndentation("CMP "+strRegTailleRestante+", #"+0+"\n");
+        ecrireAvecIndentation("BNE "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");
+        ecrireAvecIndentation("BX "+LR+"\n\n");
+        diminuerNiveauIndentation();
+        
         for (FunDefAsml funDef : e.getFunDefs()) {
             funDef.accept(this);
         }
@@ -513,12 +552,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     public void visit(SubAsml e) {
         visitOpArithmetiqueIntWorker(e, "SUB");
     }
-
-    @Override
-    public void visit(NewAsml e) {
-        throw new NotYetImplementedException();
-    }
-
+    
     @Override
     public void visit(FNegAsml e) {
         throw new NotYetImplementedException();
@@ -548,15 +582,62 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     public void visit(CallClosureAsml e) {
         throw new NotYetImplementedException();
     }
+    
+    @Override
+    public void visit(NewAsml e) {
+        visitCallWorker(new CallAsml(Constantes.CREATE_ARRAY_ASML, Arrays.asList(null, null)), e.getE(), new IntAsml(0));
+    }
 
+    private boolean estDecalageImmediatLoadStoreValide(int decalage)
+    {
+        return (decalage >= MIN_DECALAGE_LOAD_STORE && decalage <= MAX_DECALAGE_LOAD_STORE);
+    }
+    
+    private String strVariable(VarAsml var, int registreChargement)
+    {
+        EmplacementMemoire emplacementVar = emplacementVariable(var.getIdString());
+            return strReg((emplacementVar instanceof Registre)?((Registre)emplacementVar).getNumeroRegistre():registreChargement);
+    }
+    
+    private String visitMemWorker(MemAsml e)
+    {
+        chargerValeur(e.getTableau(), NUM_REGISTRE_OPERANDE1, Constantes.FP);
+        VarOuIntAsml indice = e.getIndice();
+        if(indice instanceof IntAsml)
+        {
+            int decalage = ((IntAsml)indice).getValeur()*Constantes.TAILLE_MOT_MEMOIRE;
+            if(estDecalageImmediatLoadStoreValide(decalage))
+            {
+                return "#"+decalage;
+            }
+            else
+            {
+                ecrireAvecIndentation(LDR+" "+strReg(NUM_REGISTRE_IMMEDIAT_INVALIDE)+", ="+decalage);
+                return strReg(NUM_REGISTRE_IMMEDIAT_INVALIDE);
+            }
+        }
+        else // if(indice instanceof VarAsml)
+        {
+            chargerValeur(indice, NUM_REGISTRE_IMMEDIAT_INVALIDE, Constantes.FP);            
+            return strVariable((VarAsml)indice, NUM_REGISTRE_IMMEDIAT_INVALIDE)+", LSL #2";
+        }
+    }
+    
     @Override
     public void visit(MemLectureAsml e) {
-        throw new NotYetImplementedException();
+        String indiceString = visitMemWorker(e);
+        ecrireAvecIndentation(LDR+" ");
+        visitDestinationWorker();
+        ecrire(", ["+strVariable(e.getTableau(), NUM_REGISTRE_OPERANDE1)+", "+indiceString+"]\n");
+        strDestination();
     }
 
     @Override
-    public void visit(MemEcritureAsml e) {
-        throw new NotYetImplementedException();
+    public void visit(MemEcritureAsml e) {        
+        String indiceString = visitMemWorker(e);     
+        chargerValeur(e.getValeurEcrite(), NUM_REGISTRE_OPERANDE2, Constantes.FP);
+        ecrireAvecIndentation(STR+" "+strReg(NUM_REGISTRE_OPERANDE2)+", ["+strVariable(e.getTableau(), NUM_REGISTRE_OPERANDE1)+", "+indiceString+"]\n");        
+        IntAsml.nil().accept(this); // stocke nil dans la destination (nil est represente par l'entier 0)
     }
 
     @Override
@@ -667,7 +748,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
         @Override
         public Integer visit(NewAsml e) {
-            throw new NotYetImplementedException();
+            return 0;
         }
 
         @Override
@@ -707,12 +788,12 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
         @Override
         public Integer visit(MemLectureAsml e) {
-            throw new NotYetImplementedException();
+            return 0;
         }
 
         @Override
         public Integer visit(MemEcritureAsml e) {
-            throw new NotYetImplementedException();
+            return 0;
         }
 
         @Override

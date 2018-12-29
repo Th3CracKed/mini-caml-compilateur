@@ -177,7 +177,6 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
         {
             throw new MyCompilationException("La variable "+idString+" n'a pas été déclarée");
         }
-        System.out.println("dans var : "+typeE+" = "+type);
         return creerSingleton(typeE, type);
     }
     
@@ -204,7 +203,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
         Type typeFun = Type.gen();// funDef.getType() renvoie null
         String idStringFun = funDef.getId().getIdString();
         Type ancienTypeVar = environnementVar.get(idStringFun);
-        environnementVar.put(idStringFun, typeFun); System.out.println("declaration de "+idStringFun+" : "+typeFun);
+        environnementVar.put(idStringFun, typeFun); 
         HashMap<String, Type> anciensTypesVarsArgs = new HashMap<>();
         List<Id> idsArguments = funDef.getArgs();
         int nbParametres = idsArguments.size();
@@ -225,30 +224,25 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
         {
             environnementVar.remove(idsArguments.get(i).getIdString());
         }*/
-        System.out.println(anciensTypesVarsArgs);
-        System.out.println(equations);
         equations.addAll(e.getE().accept(this));
-        System.out.println(equations);
         environnementVar.put(idStringFun, ancienTypeVar);
-        System.out.println("destruction de "+idStringFun);
         return equations;
     }
 
     @Override
     public LinkedList<EquationType> visit(App e) {
         Type typeVarFonction = Type.gen();
-        changerType(typeVarFonction);       
-        System.out.println("avant : ");
+        changerType(typeVarFonction);  
         LinkedList<EquationType> equations = e.getE().accept(this);
-        System.out.println("typeVarFonction : "+typeVarFonction+"\nDans App : "+equations);
         restaurerType();
         Type typeResultat = Type.gen();
         TFun typeFun = null;
-        for(Exp argument : e.getEs())
+        List<Exp> arguments = e.getEs();
+        for(int i = arguments.size()-1 ; i >= 0 ; i--)
         {
             Type typeArgument = Type.gen();
             changerType(typeArgument);
-            equations.addAll(argument.accept(this));
+            equations.addAll(arguments.get(i).accept(this));
             restaurerType();
             typeFun = new TFun(typeArgument, (typeFun == null)?typeResultat:typeFun);
         }
@@ -269,17 +263,46 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
 
     @Override
     public LinkedList<EquationType> visit(Array e) {
-        throw new NotYetImplementedException();
+        changerType(new TInt());
+        LinkedList<EquationType> equations = e.getE1().accept(this);
+        restaurerType();
+        Type typeElements = Type.gen();
+        changerType(typeElements);
+        equations.addAll(e.getE2().accept(this));
+        restaurerType();
+        equations.add(new EquationType(type, new TArray(typeElements)));
+        return equations;
     }
 
+    private Couple<LinkedList<EquationType>, Type> visitAccesTableauWorker(AccesTableau e)
+    {
+        Type typeElement = Type.gen();
+        changerType(new TArray(typeElement));
+        LinkedList<EquationType> equations = e.getE1().accept(this);
+        restaurerType();
+        changerType(new TInt());
+        equations.addAll(e.getE2().accept(this));
+        restaurerType();
+        return new Couple<>(equations, typeElement);
+    }
+    
     @Override
     public LinkedList<EquationType> visit(Get e) {
-        throw new NotYetImplementedException();
+        Couple<LinkedList<EquationType>, Type> donneesAccesTableau = visitAccesTableauWorker(e);
+        LinkedList<EquationType> equations = donneesAccesTableau.getComposante1();
+        equations.add(new EquationType(type, donneesAccesTableau.getComposante2()));
+        return equations;
     }
 
     @Override
     public LinkedList<EquationType> visit(Put e) {
-        throw new NotYetImplementedException();
+        Couple<LinkedList<EquationType>, Type> donneesAccesTableau = visitAccesTableauWorker(e);
+        LinkedList<EquationType> equations = donneesAccesTableau.getComposante1();
+        changerType(donneesAccesTableau.getComposante2());
+        equations.addAll(e.getE3().accept(this));
+        restaurerType();
+        equations.add(new EquationType(type, new TUnit()));
+        return equations;
     }
     
 }

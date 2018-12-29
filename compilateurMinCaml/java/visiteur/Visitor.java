@@ -107,20 +107,17 @@ public interface Visitor {
     }
 
     default void visit(Array e){
-        throw new NotYetImplementedException();
-        /*e.getE1().accept(this);
-        e.getE2().accept(this);*/
+        e.getE1().accept(this);
+        e.getE2().accept(this);
    }
 
     default void visit(Get e){
-        throw new NotYetImplementedException();
-        //UtilVisiteur.visitAccesTabWorker(e, this);
+        UtilVisiteur.visitAccesTabWorker(e, this);
     }
 
     default void visit(Put e){
-        throw new NotYetImplementedException();
-        /*UtilVisiteur.visitAccesTabWorker(e, this);
-        e.getE3().accept(this);*/
+        UtilVisiteur.visitAccesTabWorker(e, this);
+        e.getE3().accept(this);
     }
 }
 

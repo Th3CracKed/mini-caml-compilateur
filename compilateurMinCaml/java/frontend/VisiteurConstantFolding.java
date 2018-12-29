@@ -6,12 +6,10 @@ import java.util.HashMap;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import util.MyCompilationException;
 import util.NotYetImplementedException;
 import visiteur.DonneesOperateurBinaire;
 import visiteur.ObjVisitor;
 import visiteur.ObjVisitorExp;
-import visiteur.UtilVisiteur;
 
 
 public class VisiteurConstantFolding extends ObjVisitorExp 
@@ -239,6 +237,25 @@ public class VisiteurConstantFolding extends ObjVisitorExp
         }
     }
     
+    @Override
+    public Exp visit(Array e){   
+        return e;
+    }
+    
+    @Override
+    public Exp visit(Get e){  
+        Exp e2 = e.getE2();
+        Valeur valeurE2 = e2.accept(new VisiteurCalculValeurConstante());
+        return new Get(e.getE1(), (valeurE2 == null)?e2:valeurE2);
+    }
+    
+    @Override
+    public Exp visit(Put e){  
+        Exp e2 = e.getE2();
+        Valeur valeurE2 = e2.accept(new VisiteurCalculValeurConstante());
+        return new Put(e.getE1(), (valeurE2 == null)?e2:valeurE2, e.getE3());
+    }
+    
     private class VisiteurCalculValeurConstante implements ObjVisitor<Valeur>
     {        
         @Override
@@ -392,17 +409,17 @@ public class VisiteurConstantFolding extends ObjVisitorExp
 
         @Override
         public Valeur visit(Array e) {
-            throw new NotYetImplementedException();
+            return null;
         }
 
         @Override
         public Valeur visit(Get e) {
-           throw new NotYetImplementedException();
+           return null;
         }
 
         @Override
         public Valeur visit(Put e) {
-            throw new NotYetImplementedException();
+            return null;
         }
 
         @Override

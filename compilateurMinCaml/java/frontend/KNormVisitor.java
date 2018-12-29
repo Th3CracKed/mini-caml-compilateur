@@ -46,50 +46,19 @@ public class KNormVisitor extends ObjVisitorExp {
         return visitOpUnaireWorker(e, Neg::new);
     }
 
-    private class CreateurNoeudOpBinaire {
-
-        private final Exp e1;
-        private final Exp e2;
-        private final Id newId1;
-        private final Id newId2;
-        private final Var newVar1;
-        private final Var newVar2;
-        private final Type newType1;
-        private final Type newType2;
-
-        public CreateurNoeudOpBinaire(OperateurBinaire e) {
-            this.e1 = e.getE1().accept(KNormVisitor.this);
-            this.e2 = e.getE2().accept(KNormVisitor.this);
-            this.newId1 = Id.gen();
-            this.newId2 = Id.gen();
-            this.newVar1 = new Var(newId1);
-            this.newVar2 = new Var(newId2);
-            this.newType1 = Type.gen();
-            this.newType2 = Type.gen();
-        }
-
-        public Let creerNoeud(OperateurBinaire e) {
-            return new Let(newId1, newType1, e1,
-                    new Let(newId2, newType2, e2, e));
-        }
-
-        public Var getNewVar1() {
-            return newVar1;
-        }
-
-        public Var getNewVar2() {
-            return newVar2;
-        }
-    }
-
-    private Let visitOpBinaireWorker(OperateurBinaire e, BiFunction<Exp, Exp, ? extends OperateurBinaire> constructeurOpBinaire)
+    private Let visitNoeudA2FilsWorker(Exp e1, Exp e2, BiFunction<Exp, Exp, ? extends Exp> constructeur)
     {
         Var var1 = new Var(Id.gen());
         Var var2 = new Var(Id.gen());
-        Exp e1 = e.getE1().accept(this);
-        Exp e2 = e.getE2().accept(this);
-        return new Let(var1.getId(), Type.gen(), e1,
-                    new Let(var2.getId(), Type.gen(), e2, constructeurOpBinaire.apply(var1, var2)));
+        Exp e1Accepte = e1.accept(this);
+        Exp e2Accepte = e2.accept(this);
+        return new Let(var1.getId(), Type.gen(), e1Accepte,
+                    new Let(var2.getId(), Type.gen(), e2Accepte, constructeur.apply(var1, var2)));
+    }
+    
+    private Let visitOpBinaireWorker(OperateurBinaire e, BiFunction<Exp, Exp, ? extends Exp> constructeurOpBinaire)
+    {
+        return visitNoeudA2FilsWorker(e.getE1(), e.getE2(), constructeurOpBinaire);
     }
     
     @Override
@@ -140,8 +109,6 @@ public class KNormVisitor extends ObjVisitorExp {
 
     @Override
     public Let visit(Put e) {
-        throw new NotYetImplementedException();
-        /*
         Exp e1 = e.getE1().accept(this);
         Exp e2 = e.getE2().accept(this);
         Exp e3 = e.getE3().accept(this);
@@ -158,6 +125,16 @@ public class KNormVisitor extends ObjVisitorExp {
           new Let(new_var2, new_type2, e2,
               new Let(new_var3, new_type3, e3,
                 new Put(new Var(new_var1), new Var(new_var2), new Var(new_var3)))));
-        return res;*/
+        return res;
+    }
+    
+    @Override
+    public Let visit(Get e) {
+        return visitNoeudA2FilsWorker(e.getE1(), e.getE2(), Get::new);
+    }
+    
+    @Override
+    public Let visit(Array e) {
+        return visitNoeudA2FilsWorker(e.getE1(), e.getE2(), Array::new);
     }
 }

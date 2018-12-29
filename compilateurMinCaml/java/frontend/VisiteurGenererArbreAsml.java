@@ -3,6 +3,7 @@ package frontend;
 import arbremincaml.*;
 import arbreasml.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import util.Constantes;
@@ -299,17 +300,17 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
 
     @Override
     public NoeudAsml visit(Array e) {
-        throw new NotYetImplementedException();
+        return new CallAsml(Constantes.CREATE_ARRAY_ASML, Arrays.asList((VarAsml)e.getE1().accept(this), (VarAsml)e.getE2().accept(this)));
     }
 
     @Override
     public NoeudAsml visit(Get e) {
-        throw new NotYetImplementedException();
+        return new MemLectureAsml((VarAsml)e.getE1().accept(this), (VarOuIntAsml)e.getE2().accept(this));
     }
 
     @Override
     public NoeudAsml visit(Put e) {
-        throw new NotYetImplementedException();
+        return new MemEcritureAsml((VarAsml)e.getE1().accept(this), (VarOuIntAsml)e.getE2().accept(this), (VarAsml)e.getE3().accept(this));
     }
     
 }
