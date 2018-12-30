@@ -216,7 +216,7 @@ let rec f x = 42 in
 let rec g x = 43 in
 let t = (f, g) in 
 let (a,b) = t in
-(a 0)
+print_int (a 0)
 EOF
 cat << EOF > bad1.ml
 let rec x = false + 10 in

@@ -28,7 +28,7 @@ public class TFun extends Type {
 
     @Override
     public String toString() {
-        return "(" + t1 + ") -> (" + t2 + ")";
+        return t1 + " -> " + t2;
     }
 
 }

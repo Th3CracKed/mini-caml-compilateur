@@ -14,13 +14,13 @@ import visiteur.VisiteurAsml;
 
 public class VisiteurGenererCodeArm extends GenerateurDeCode implements VisiteurAsml {
 
-    private static final int TAILLE_ZONE_ALLOCATION_DYNAMIQUE = 10000;
+    private static final int TAILLE_ZONE_ALLOCATION_DYNAMIQUE = 100000*Constantes.TAILLE_MOT_MEMOIRE;
     private static final int NUM_REGISTRE_DESTINATION = 4;
     private static final int NUM_REGISTRE_OPERANDE1 = 4;
     private static final int NUM_REGISTRE_OPERANDE2 = 5;
     private static final int NUM_REGISTRE_IMMEDIAT_INVALIDE = 6;
     private static final int NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR = 7;
-    private static final int NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE = 8;
+    //private static final int NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE = 8;
     
     private static final String FP = "FP";
     private static final String SP = "SP";
@@ -35,7 +35,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     //private static final int MIN_IMMEDIAT_SHIFTER_OPERAND = -(int) Math.pow(2, 7);
     //private static final int MAX_IMMEDIAT_SHIFTER_OPERAND = -MIN_IMMEDIAT_SHIFTER_OPERAND-1; // toutes les valeurs sur 8 bits sont valides pour le shifter operand (entre -2^7 et 2^7-1)
     
-    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3, NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE, 12, Constantes.LR};
+    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3/*, NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE*/, 12, Constantes.LR};
 
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final HashMap<Integer, String> registreVersChaine;
@@ -343,15 +343,15 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         }
         ecrire(":\n");
         augmenterNiveauIndentation();
-        if (e.estMainFunDef()) {
+        /*if (e.estMainFunDef()) {
             ajouterValeurASP(-TAILLE_ZONE_ALLOCATION_DYNAMIQUE);
             ecrireAvecIndentation("MOV "+strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE)+", "+SP+"\n");
-        }
+        }*/
         changerEstInstructionMov(true);
         int tailleEnvironnement = e.accept(new VisiteurTailleEnvironnement())/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;
         if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
         {
-            ecrireAvecIndentation("STMFD SP!, {");
+            ecrireAvecIndentation("PUSH {");
             for (int i = 0; i < Constantes.REGISTRE_SAUVEGARDES_APPELE.length; i++) {
                 if(i >= 1)
                 {
@@ -368,7 +368,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         ajouterValeurASP(tailleEnvironnement);
         if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
         {
-            ecrireAvecIndentation("LDMFD SP!, {");
+            ecrireAvecIndentation("POP {");
             for (int i = 0; i < Constantes.REGISTRE_SAUVEGARDES_APPELE.length; i++) {
                 if(i >= 1)
                 {
@@ -381,22 +381,24 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         }
         restaurerEstInstructionMov();
         if (e.estMainFunDef()) {
-            ajouterValeurASP(TAILLE_ZONE_ALLOCATION_DYNAMIQUE);
+            //ajouterValeurASP(TAILLE_ZONE_ALLOCATION_DYNAMIQUE);            
+            ecrireAvecIndentation("B "+Constantes.EXIT_ARM+"\n");
         }
         else
         {            
-            ecrireAvecIndentation("BX LR\n\n");
+            ecrireAvecIndentation("BX LR\n");
         }
+        ecrire("\n");
         diminuerNiveauIndentation();
     }
     
     public void visitCallWorker(CallAsml e, VarOuIntAsml param0, VarOuIntAsml param1)
     {
         int tailleAEmpiler = (/*REGISTRE_SAUVEGARDES_APPELANT.length + */Math.max(0, (e.getArguments().size() - Constantes.REGISTRES_PARAMETRES.length))) * Constantes.TAILLE_MOT_MEMOIRE;
-        ajouterValeurASP(-tailleAEmpiler);
+        //ajouterValeurASP(-tailleAEmpiler);
         if(REGISTRE_SAUVEGARDES_APPELANT.length >= 1)
         {
-            ecrireAvecIndentation("STMFD SP!, {");
+            ecrireAvecIndentation("PUSH {");
             for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELANT.length; i++) {
                 if(i >= 1)
                 {
@@ -430,7 +432,8 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 }
             } else {
                 chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
-                loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
+                ecrireAvecIndentation("PUSH {"+strReg(NUM_REGISTRE_OPERANDE1)+"}\n");
+                //loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
             }            
         }
         ecrireAvecIndentation("BL ");
@@ -468,7 +471,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         //strDestination();
         if(REGISTRE_SAUVEGARDES_APPELANT.length >= 1)
         {
-            ecrireAvecIndentation("LDMFD SP!, {");
+            ecrireAvecIndentation("POP {");
             for (int i = 0; i < REGISTRE_SAUVEGARDES_APPELANT.length; i++) {
                 if(i >= 1)
                 {
@@ -523,7 +526,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         ecrire(Constantes.CREATE_ARRAY_ARM+":\n");
         augmenterNiveauIndentation();
         
-        String strRegProchainAdrAllouee = strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE);
+        /*String strRegProchainAdrAllouee = strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE);
         String strRegParam0Retour = strReg(Constantes.REGISTRE_VALEUR_RETOUR);
         String strRegTailleRestante = strReg(Constantes.REGISTRES_PARAMETRES[2]);
         ecrireAvecIndentation("CMP "+strRegParam0Retour+", #"+0+"\n");
@@ -537,14 +540,51 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         ecrireAvecIndentation("CMP "+strRegTailleRestante+", #"+0+"\n");
         ecrireAvecIndentation("BNE "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");
         ecrireAvecIndentation("BX "+LR+"\n\n");
-        diminuerNiveauIndentation();
+        diminuerNiveauIndentation();*/
+        String[] r = new String[Constantes.REGISTRES_PARAMETRES.length];
+        for(int i = 0 ; i < r.length ; i++)
+        {
+            r[i] = strReg(Constantes.REGISTRES_PARAMETRES[i]);
+        }
+        ecrireAvecIndentation("MOV "+r[2]+", "+r[0]+"            @ met la taille restante a initialiser dans r2 \n"); 
+        ecrireAvecIndentation("LDR "+r[0]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r0 \n"); // 
+        ecrireAvecIndentation("LDR "+r[0]+", ["+r[0]+"]            @charge le pointeur sur le debut de la prochaine zone a allouer dans r0 \n"); // 
+        ecrireAvecIndentation("MOV "+r[3]+", "+r[0]+"            @stocke l'adresse du prochain mot memoire a initialiser dans r3\n");
+        ecrire(Constantes.CREATE_ARRAY_BOUCLE_ARM+":\n");
+        ecrireAvecIndentation("STR "+r[1]+", ["+r[3]+"]            @initialise le prochain mot memoire avec la valeur du deuxieme parametre de la fonction\n");
+        ecrireAvecIndentation("SUB "+r[2]+", "+r[2]+", #"+1+"            @ decremente la taille restante a initialiser\n");
+        ecrireAvecIndentation("ADD "+r[3]+", "+r[3]+", #"+Constantes.TAILLE_MOT_MEMOIRE+"            @stocke l'adresse du prochain mot memoire a initialiser dans r3 \n");
+        ecrireAvecIndentation("CMP "+r[2]+", #"+0+"            @compare la taille restante a initialiser a 0\n");
+        ecrireAvecIndentation("BGT "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"            @si la taille restante a initialiser est strictement positive, aller a "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");
+        ecrireAvecIndentation("LDR "+r[2]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r2\n");
+        ecrireAvecIndentation("STR "+r[3]+", ["+r[2]+"]            @ecrit la nouvelle valeur du pointeur sur le debut de la prochaine zone a allouer\n");
+        ecrireAvecIndentation("BX "+LR+"            @aller a l'adresse dans lr (instruction return)\n\n");
+        /*
+        _min_caml_create_array:
+            MOV R2, R0
+            LDR R0, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM
+            LDR R0, [R0]
+            MOV R3, R0
+        create_array_boucle:
+            STR R1, [R3]
+            SUB R2, R2, #1
+            ADD R3, R3, #4
+            CMP R2, #0
+            BGT create_array_boucle
+            LDR R2, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM
+            STR R3, [R2]
+            BX LR
         
+        */
         for (FunDefAsml funDef : e.getFunDefs()) {
             funDef.accept(this);
         }
         e.getMainFunDef().accept(this);
         augmenterNiveauIndentation();
-        ecrireAvecIndentation("B "+Constantes.EXIT_ARM+"\n");
+        ecrire(".data\n");
+        ecrire(".balign "+Constantes.TAILLE_MOT_MEMOIRE+"\n");
+        ecrire(Constantes.ZONE_MEMOIRE_DYNAMIQUE_ARM+": .skip "+TAILLE_ZONE_ALLOCATION_DYNAMIQUE+"\n");
+        ecrire(Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+": .word "+Constantes.ZONE_MEMOIRE_DYNAMIQUE_ARM+"\n");
         diminuerNiveauIndentation();
     }
 
@@ -619,7 +659,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         else // if(indice instanceof VarAsml)
         {
             chargerValeur(indice, NUM_REGISTRE_IMMEDIAT_INVALIDE, Constantes.FP);            
-            return strVariable((VarAsml)indice, NUM_REGISTRE_IMMEDIAT_INVALIDE)+", LSL #2";
+            return strVariable((VarAsml)indice, NUM_REGISTRE_IMMEDIAT_INVALIDE)+", LSL #"+2;
         }
     }
     

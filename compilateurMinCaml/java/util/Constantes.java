@@ -65,6 +65,8 @@ public class Constantes {
     
     public static final String EXIT_ARM = "min_caml_exit";
     public static final String CREATE_ARRAY_BOUCLE_ARM = "create_array_boucle";
+    public static final String ZONE_MEMOIRE_DYNAMIQUE_ARM = "zone_dynamique";
+    public static final String DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM = "debut_zone_dynamique";
     // fonctions presentes dans libMinCaml.S mais que l'utilisateur ne peut pas appeler comme les fonctions externes. Par exemple,
     // min_caml_print_int appelle min_caml_print_string qui elle meme appelle stringlength mais le programmeur MinCaml ne peut pas appeler stringlength directement.
     // min_caml_exit ne peut pas non plus etre appele explicitement mais est appele automatique a la fin de chaque programme

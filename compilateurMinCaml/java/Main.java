@@ -307,8 +307,8 @@ import util.*;
 public class Main {
 
     private static final int CODE_RETOUR_ERREUR = 1;
-
-    static public void main(String argv[]) {
+    
+    public static void main(String argv[]) {
         /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid");
         for (File fichier : dossierTests.listFiles()) {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};

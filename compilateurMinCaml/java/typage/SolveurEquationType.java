@@ -1,19 +1,14 @@
 package typage;
 
-import arbremincaml.TArray;
-import arbremincaml.TUnit;
-import arbremincaml.TInt;
-import arbremincaml.TBool;
-import arbremincaml.TFun;
-import arbremincaml.TTuple;
-import arbremincaml.TVar;
-import arbremincaml.Type;
+import arbremincaml.*;
 import java.util.LinkedList;
+import java.util.List;
 import util.MyCompilationException;
 import util.NotYetImplementedException;
 
 
 public class SolveurEquationType {
+    
     private static boolean TVarEtEgales(Type e1, TVar e2)
     {
         return (e1 instanceof TVar && ((TVar)e1).getV().equals(e2.getV()));
@@ -31,7 +26,7 @@ public class SolveurEquationType {
     
     public static LinkedList<EquationType> resoudreEquations(LinkedList<EquationType> listeEquations)
     {
-        //System.out.println("/////////////////// ETAPE RESOLUTION"); listeEquations.forEach(System.out::println);
+        System.out.println("/////////////////// ETAPE RESOLUTION"); listeEquations.forEach(System.out::println);
         String messageMalType = "Le programme spécifié en entrée n'est pas correctement typé";
         if(listeEquations.isEmpty())
         {
@@ -73,8 +68,6 @@ public class SolveurEquationType {
             }
             else if(t1Tete instanceof TTuple)
             {
-                throw new NotYetImplementedException();
-                /*
                 if(t2Tete instanceof TTuple)
                 {
                     List<Type> ts1 = ((TTuple) t1Tete).getTs();
@@ -94,7 +87,6 @@ public class SolveurEquationType {
                 {
                     throw new MyCompilationException(messageMalType);
                 }
-                */
             }
             else if(t1Tete instanceof TArray)
             {
@@ -147,7 +139,7 @@ public class SolveurEquationType {
         }
         else if(type instanceof TTuple)
         {
-            throw new NotYetImplementedException();
+            return ((TTuple) type).getTs().stream().anyMatch(SolveurEquationType::contientVar);
         }
         else if(type instanceof TArray)
         {
@@ -206,7 +198,18 @@ public class SolveurEquationType {
         }
         else if (typeDOrigine instanceof TTuple)
         {
-            throw new NotYetImplementedException();
+            List<Type> types = ((TTuple)typeDOrigine).getTs();
+            for(int i = 0 ; i < types.size() ; i++)
+            {
+                if(TVarEtEgales(types.get(i), variable))
+                {
+                    types.set(i, valeurVariable);
+                }
+                else
+                {
+                    remplacer(types.get(i), variable, valeurVariable);
+                }
+            }
         }
         else if (typeDOrigine instanceof TArray)
         {

@@ -253,12 +253,42 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
 
     @Override
     public LinkedList<EquationType> visit(Tuple e) {
-        throw new NotYetImplementedException();
+        LinkedList<EquationType> equations = new LinkedList<>();
+        List<Type> typesComposante = new ArrayList<>();
+        for(Exp composante : e.getEs())
+        {
+            Type typeComposante = Type.gen();
+            typesComposante.add(typeComposante);
+            changerType(typeComposante);
+            equations.addAll(composante.accept(this));
+            restaurerType();
+        }
+        equations.add(new EquationType(type, new TTuple(typesComposante)));
+        return equations;
     }
 
     @Override
     public LinkedList<EquationType> visit(LetTuple e) {
-        throw new NotYetImplementedException();
+        
+        HashMap<String, Type> anciensTypesComposantes = new HashMap<>();
+        List<Type> typesComposantes = new ArrayList<>();
+        List<Id> idsComposantes = e.getIds();
+        for(Id idsComposante : idsComposantes)
+        {
+            typesComposantes.add(Type.gen());
+        }
+        changerType(new TTuple(typesComposantes));
+        LinkedList<EquationType> equations = e.getE1().accept(this);
+        restaurerType();
+        for(int i = 0 ; i < idsComposantes.size() ; i++)
+        {
+            String idString = idsComposantes.get(i).getIdString();
+            anciensTypesComposantes.put(idString, environnementVar.get(idString));
+            environnementVar.put(idString, typesComposantes.get(i));
+        }
+        equations.addAll(e.getE2().accept(this));
+        environnementVar.putAll(anciensTypesComposantes);
+        return equations;
     }
 
     @Override

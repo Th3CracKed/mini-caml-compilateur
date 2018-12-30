@@ -14,4 +14,19 @@ public class TTuple extends Type {
     {
         return ts;
     }
+    
+    @Override
+    public String toString()
+    {
+        String resultat = "(";
+        for(int i = 0 ; i < ts.size() ; i++)
+        {
+            if(i >= 1)
+            {
+                resultat += ", ";
+            }
+            resultat += ts.get(i);
+        }
+        return resultat+")";
+    }
 }
