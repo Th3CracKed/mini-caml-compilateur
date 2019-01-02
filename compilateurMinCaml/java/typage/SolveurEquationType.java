@@ -3,6 +3,7 @@ package typage;
 import arbremincaml.*;
 import java.util.LinkedList;
 import java.util.List;
+import jdk.nashorn.internal.codegen.CompilationException;
 import util.MyCompilationException;
 import util.NotYetImplementedException;
 
@@ -26,7 +27,12 @@ public class SolveurEquationType {
     
     public static LinkedList<EquationType> resoudreEquations(LinkedList<EquationType> listeEquations)
     {
-        System.out.println("/////////////////// ETAPE RESOLUTION"); listeEquations.forEach(System.out::println);
+        return resoudreEquations(listeEquations, 0);
+    }
+    
+    private static LinkedList<EquationType> resoudreEquations(LinkedList<EquationType> listeEquations, int nbAppelsSansModifierListe)
+    {
+        //System.out.println("/////////////////// ETAPE RESOLUTION"); listeEquations.forEach(System.out::println);
         String messageMalType = "Le programme spécifié en entrée n'est pas correctement typé";
         if(listeEquations.isEmpty())
         {
@@ -34,6 +40,14 @@ public class SolveurEquationType {
         }
         else
         {          
+            if(nbAppelsSansModifierListe == listeEquations.size())
+            {
+                // permet d'assurer la terminaison de l'algorithme (certains programmes ne permettent pas de determiner le type de toutes leur variable
+                // par exemple, dans un programme avec une fonction avec des parametres qui n'est jamais appelee, on ne peut pas connaitre le type de ses
+                // parametres. Comme une equation ayant des variables de deux cotes de l'operateur egal est reinseree a la fin de la liste a resoudre,
+                // il faut stopper l'execution de l'algorithme si n appels recursifs n'ont pas modifie une liste de n equation(s) encore non resolue(s).
+                return listeEquations;
+            }
             EquationType teteListe = listeEquations.pop(); 
             if(teteListe.getT2() instanceof TVar)
             {
@@ -45,7 +59,7 @@ public class SolveurEquationType {
             {                
                 if(t1Tete.getClass().isInstance(t2Tete))
                 {
-                    return resoudreEquations(listeEquations);
+                    return resoudreEquations(listeEquations, 0);
                 }
                 else
                 {
@@ -59,7 +73,7 @@ public class SolveurEquationType {
                 {
                     listeEquations.addFirst(new EquationType(((TFun) t1Tete).getT1(), ((TFun) t2Tete).getT1()));
                     listeEquations.addFirst(new EquationType(((TFun) t1Tete).getT2(), ((TFun) t2Tete).getT2()));
-                    return resoudreEquations(listeEquations);
+                    return resoudreEquations(listeEquations, 0);
                 }
                 else
                 {
@@ -81,7 +95,7 @@ public class SolveurEquationType {
                     {                        
                         listeEquations.addFirst(new EquationType(ts1.get(i), ts2.get(i)));
                     }
-                    return resoudreEquations(listeEquations);
+                    return resoudreEquations(listeEquations, 0);
                 }
                 else
                 {
@@ -93,7 +107,7 @@ public class SolveurEquationType {
                 if(t2Tete instanceof TArray)
                 {
                     listeEquations.addFirst(new EquationType(((TArray) t1Tete).getT(), ((TArray) t2Tete).getT()));
-                    return resoudreEquations(listeEquations);
+                    return resoudreEquations(listeEquations, 0);
                 }
                 else
                 {
@@ -103,16 +117,17 @@ public class SolveurEquationType {
             else if(t1Tete instanceof TVar)
             {
                 TVar t1TeteTVar = (TVar)t1Tete;
+                boolean aRemplace = false;
                 for(EquationType equation : listeEquations)
                 {
-                    remplacer(equation, t1TeteTVar, t2Tete);
+                    aRemplace |= remplacer(equation, t1TeteTVar, t2Tete);
                 }       
                 boolean contientVariable = contientVar(t2Tete);
                 if(contientVariable)
                 {
                     listeEquations.addLast(teteListe);
                 }
-                LinkedList<EquationType> resultat = resoudreEquations(listeEquations);                
+                LinkedList<EquationType> resultat = resoudreEquations(listeEquations, aRemplace?0:nbAppelsSansModifierListe+1);                
                 if(!contientVariable)
                 {                    
                     resultat.addFirst(teteListe);
@@ -150,30 +165,35 @@ public class SolveurEquationType {
             return false;
         }
     }
-    private static void remplacer(EquationType equationDOrigine, TVar variable, Type valeurVariable)
+    private static boolean remplacer(EquationType equationDOrigine, TVar variable, Type valeurVariable)
     {
+        boolean aRemplace = false;
         Type t1 = equationDOrigine.getT1();
         Type t2 = equationDOrigine.getT2();
         if(TVarEtEgales(t1, variable))
         {
+            aRemplace = true;
             equationDOrigine.setT1(valeurVariable);
         }
         else
         {
-            remplacer(t1, variable, valeurVariable);
+            aRemplace |= remplacer(t1, variable, valeurVariable);
         }
         if(TVarEtEgales(t2, variable))
         {
+            aRemplace = true;
             equationDOrigine.setT2(valeurVariable);
         }
         else
         {
-            remplacer(t2, variable, valeurVariable);
+            aRemplace |= remplacer(t2, variable, valeurVariable);
         }
+        return aRemplace;
     }
     
-    private static void remplacer(Type typeDOrigine, TVar variable, Type valeurVariable)
+    private static boolean remplacer(Type typeDOrigine, TVar variable, Type valeurVariable)
     {
+        boolean aRemplace = false;
         if(typeDOrigine instanceof TFun)
         {
             TFun typeDorigineFun = (TFun)typeDOrigine;
@@ -181,19 +201,21 @@ public class SolveurEquationType {
             Type t2 = typeDorigineFun.getT2();
             if(TVarEtEgales(t1, variable))
             {
+                aRemplace = true;
                 typeDorigineFun.setT1(valeurVariable);
             }
             else
             {
-                remplacer(t1, variable, valeurVariable);
+                aRemplace |= remplacer(t1, variable, valeurVariable);
             }
             if(TVarEtEgales(t2, variable))
             {
+                aRemplace = true;
                 typeDorigineFun.setT2(valeurVariable);
             }
             else
             {
-                remplacer(t2, variable, valeurVariable);
+                aRemplace |= remplacer(t2, variable, valeurVariable);
             }
         }
         else if (typeDOrigine instanceof TTuple)
@@ -203,11 +225,12 @@ public class SolveurEquationType {
             {
                 if(TVarEtEgales(types.get(i), variable))
                 {
+                    aRemplace = true;
                     types.set(i, valeurVariable);
                 }
                 else
                 {
-                    remplacer(types.get(i), variable, valeurVariable);
+                    aRemplace |= remplacer(types.get(i), variable, valeurVariable);
                 }
             }
         }
@@ -217,12 +240,14 @@ public class SolveurEquationType {
             Type t = typeDorigineArray.getT();
             if(TVarEtEgales(t, variable))
             {
+                aRemplace = true;
                 typeDorigineArray.setT(valeurVariable);
             }
             else
             {
-                remplacer(t, variable, valeurVariable);
+                aRemplace |= remplacer(t, variable, valeurVariable);
             }
         }
+        return aRemplace;
     }
 }

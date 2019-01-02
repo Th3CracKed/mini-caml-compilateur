@@ -16,7 +16,7 @@ public class Id {
         idUtilises.addAll(Constantes.MOTS_RESERVES_ASML);
         idUtilises.addAll(Constantes.FONCTION_EXTERNES_ASML);
         idUtilises.addAll(Constantes.FONCTION_EXTERNES_ARM);
-        idUtilises.addAll(Constantes.FONCTION_EXTERNES_PRIVEES_ARM);
+        idUtilises.addAll(Constantes.LABELS_PRIVES_ARM);
         idUtilises.add(Constantes.NOM_FONCTION_MAIN_ASML);
         idUtilises.add(Constantes.NOM_FONCTION_MAIN_ARM);
         return idUtilises;
@@ -49,7 +49,7 @@ public class Id {
         return new Id(genIdString());
     }
     
-    public static String genIdStringWithPrefix(String prefixe)
+    public static String genIdStringAvecPrefixe(String prefixe)
     {
         String idString = null;
         do
@@ -63,12 +63,16 @@ public class Id {
     
     public static String genIdString()
     {
-         return genIdStringWithPrefix("v");
+         return genIdStringAvecPrefixe("v");
     }
     
     public static String genLabelString()
     {
-        return genIdStringWithPrefix("_f");
+        return genIdStringAvecPrefixe(Constantes.DEBUT_LABEL_ASML+"f");
+    }
+    
+    public static boolean estUnLabel(String idString) {
+        return idString.startsWith(Constantes.DEBUT_LABEL_ASML);
     }
 
 }

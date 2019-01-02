@@ -2,6 +2,7 @@ package frontend;
 
 import arbremincaml.*;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -81,7 +82,7 @@ public class KNormVisitor extends ObjVisitorExp {
         return visitOpBinaireWorker(e, LE::new);
     }
 
-    private Exp visitIfWorker(Exp e1, Exp e2, Exp e3, BinaryOperator<Exp> createurOpRel) {
+    private Let visitIfWorker(Exp e1, Exp e2, Exp e3, BinaryOperator<Exp> createurOpRel) {
         Eq e1Eq = (Eq) e1;
         Var varE1Gauche = new Var(Id.gen());
         Var varE1Droite = new Var(Id.gen());
@@ -89,7 +90,7 @@ public class KNormVisitor extends ObjVisitorExp {
     }
 
     @Override
-    public Exp visit(If e) {
+    public Let visit(If e) {
         Exp e1 = e.getE1().accept(this);
         Exp e2 = e.getE2().accept(this);
         Exp e3 = e.getE3().accept(this);
@@ -136,5 +137,20 @@ public class KNormVisitor extends ObjVisitorExp {
     @Override
     public Let visit(Array e) {
         return visitNoeudA2FilsWorker(e.getE1(), e.getE2(), Array::new);
+    }
+    
+    @Override
+    public Let visit(Tuple e) {
+        LinkedList<Exp> vars = new LinkedList<>();
+        List<Exp> composantes = e.getEs();
+        for (Exp composante : composantes) {
+            vars.add(new Var(Id.gen()));
+        }
+        Var var = new Var(Id.gen());
+        Let resultat = new Let(var.getId(), Type.gen(), new Tuple(vars), var);
+        for (int i = 0; i < composantes.size(); i++) {
+            resultat = new Let(((Var) vars.get(i)).getId(), Type.gen(), composantes.get(i).accept(this), resultat);
+        }
+        return resultat;
     }
 }

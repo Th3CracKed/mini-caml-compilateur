@@ -1,11 +1,13 @@
 package visiteur;
 
+import arbreasml.CallBaseAsml;
 import arbreasml.IfIntAsml;
 import arbreasml.MemAsml;
 import arbremincaml.OperateurBinaire;
 import arbremincaml.OperateurUnaire;
 import arbreasml.NegAsml;
 import arbreasml.OperateurArithmetiqueIntAsml;
+import arbreasml.VarAsml;
 import arbremincaml.AccesTableau;
 
 public class UtilVisiteur {
@@ -40,5 +42,13 @@ public class UtilVisiteur {
         e.getE2().accept(visiteur);
         e.getESiVrai().accept(visiteur);
         e.getESiFaux().accept(visiteur);
+    }
+    
+    public static void visitCallBaseWorker(CallBaseAsml e, VisiteurAsml visiteur)
+    {
+        for (VarAsml argument : e.getArguments())
+        {
+            argument.accept(visiteur);
+        }
     }
 }

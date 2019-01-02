@@ -1,4 +1,3 @@
-/*
 import arbremincaml.Exp;
 import arbremincaml.Parser;
 import arbremincaml.Lexer;
@@ -7,298 +6,7 @@ import arbreasml.*;
 import backend.*;
 import frontend.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import typage.*;
-import util.*;
-
-//test commit
-
-public class Main {
-        private static final int CODE_RETOUR_ERREUR = 1;
-  static public void main(String argv[]) {   
-      try
-      {       
-            String nomFichierEntree = null;
-            String nomFichierSortie = "codeGenere."+(Arrays.asList(argv).contains("-asml")?"asml":"s");
-            HashSet<String> optionsDejaRencontrees = new HashSet<>();
-            for(int i = 0 ; i < argv.length ; i++)
-            {
-                switch (argv[i]) {
-                    case "-o":
-                        i++;
-                        nomFichierSortie = argv[i];
-                        throw new NotYetImplementedException();
-                    case "-h":
-                        System.out.println("-o : output file\n" +
-                                "-h : display help\n" +
-                                "-v : display version\n" +
-                                "-t : type check only\n" +
-                                "-p : parse only\n" +
-                                "-asml : output ASML");
-                        break;
-                    case "-v":
-                        System.out.println("1");
-                        break;
-                    case "-t":
-                        throw new NotYetImplementedException();
-                    case "-p":
-                        throw new NotYetImplementedException();
-                    case "-asml":
-                        throw new NotYetImplementedException();
-                    default:
-                        if(nomFichierEntree != null)
-                        {
-                            throw new CompilationException("Un seul fichier à compiler doit être spécifié");
-                        }
-                        nomFichierEntree = argv[i];
-                        break;
-                }   
-                if(optionsDejaRencontrees.contains(argv[i]))
-                {
-                    throw new CompilationException("L'option "+argv[i]+" ne peut pas etre utilisée 2 fois");
-                }
-                optionsDejaRencontrees.add(argv[i]);
-            }            
-            //nomFichierEntree = "rsc/tests/letImbriques/valid/letImbriques.ml";
-            compilerFichiersRepertoire(new File("rsc/tests/typechecking/valid"), false, false);
-            compilerFichiersRepertoire(new File("rsc/tests/frontend"), false, false);            
-            compilerFichiersRepertoire(new File("rsc/tests/typechecking/invalid"), true, false);
-            compilerFichiersRepertoire(new File("rsc/tests/backend/registre/valid"), false, true);   
-            compilerFichiersRepertoire(new File("rsc/tests/frontend/genererAsml/valid"), false, true);   
-      }
-      catch(Exception e)
-      {
-          //e.printStackTrace();
-          if(e.getMessage() == null || e.getMessage().isEmpty())
-          {
-            System.err.println("Exception "+e.getClass().getName()+" levée");
-          }
-          else
-          {
-              System.err.println(e.getMessage());
-          }
-          System.exit(CODE_RETOUR_ERREUR);
-      }      
-  }
- 
-  private static void compiler(String nomFichierEntree)
-  {              
-                System.out.println("=======================================================");
-                System.out.println("======   "+nomFichierEntree+" ======");
-                System.out.println("=======================================================");
-                Parser p = null;
-                try
-                {
-                    p = new Parser(new Lexer(new FileReader(nomFichierEntree)));
-                }
-                catch(FileNotFoundException e)
-                {
-                    throw new CompilationException("Le fichier à compiler n'existe pas");
-                }
-                Exp expression;      
-                try {
-                    expression = (Exp) p.parse().value;
-                } catch (Exception ex) {
-                    throw new CompilationException(ex.getMessage());
-                }
-                assert (expression != null);
-                System.out.println("------ ENTREE ------");
-                expression.accept(new PrintVisitor());
-                System.out.println();
-                System.out.println("------ LISTE EQUATIONS DE TYPE NON RESOLUES ------");
-                // let x = (let y = 1 in 1) in ()
-                // Var x = new Var(Id.gen());
-                // Var y = new Var(Id.gen());
-                // expression = new Let(x.getId(), Type.gen(), new Let(y.getId(), Type.gen(), new Int(1), new Int(1)), new Unit());
-                LinkedList<EquationType> equationsType = expression.accept(new VisiteurGenererEquationType());
-                for(EquationType equationType : equationsType)
-                {                
-                    System.out.println(equationType.getT1()+" = "+equationType.getT2());
-                }
-                System.out.println(); 
-                System.out.println("------ LISTE EQUATIONS DE TYPE RESOLUES ------");
-                equationsType = SolveurEquationType.resoudreEquations(equationsType);
-                for(EquationType equationType : equationsType)
-                {                
-                    System.out.println(equationType.getT1()+" = "+equationType.getT2());
-                }
-                System.out.println();
-                System.out.println("------ PROGRAMME APRES KNORMALISATION(ET ETAPES PRECEDENTES) ------");
-                expression = expression.accept(new KNormVisitor());
-                // ??? expression = expression.accept(new VisiteurLetDansEqLeIf());
-                expression.accept(new PrintVisitor());
-                System.out.println(); 
-                System.out.println("------ PROGRAMME APRES ALPHACONVERSIONS (ET ETAPES PRECEDENTES)  ------");
-                expression.accept(new VisiteurAlphaConversion());
-                expression.accept(new PrintVisitor());
-                System.out.println();  
-                System.out.println("------ PROGRAMME APRES BETAREDUCTION (ET ETAPES PRECEDENTES)  ------");
-                expression = expression.accept(new VisiteurBetaReduction());
-                expression.accept(new PrintVisitor());
-                System.out.println();  
-                System.out.println("------ PROGRAMME APRES REDUCTION LET IMBRIQUES (ET ETAPES PRECEDENTES)  ------");
-                expression = expression.accept(new VisiteurLetImbriques());
-                expression.accept(new PrintVisitor());
-                System.out.println();  
-                System.out.println("------ PROGRAMME APRES INLINE EXPANSION (ET ETAPES PRECEDENTES)  ------");
-                expression = expression.accept(new VisiteurInlineExpansion());
-                expression.accept(new PrintVisitor());
-                System.out.println();  
-                System.out.println("------ PROGRAMME APRES CONSTANT FOLDING (ET ETAPES PRECEDENTES)  ------");
-                expression = expression.accept(new VisiteurConstantFolding());
-                expression.accept(new PrintVisitor());
-                System.out.println();  
-                System.out.println("------ PROGRAMME APRES ELIMINATION DEFINITIONS INUTILES (ET ETAPES PRECEDENTES)  ------");
-                expression = expression.accept(new VisiteurDefinitionsInutiles());
-                expression.accept(new PrintVisitor());
-                System.out.println();
-                System.out.println("------ PROGRAMME APRES CLOSURE CONVERSION (ET ETAPES PRECEDENTES)  ------");
-                expression = expression.accept(new VisiteurConversionClosure());
-                expression.accept(new PrintVisitor());
-                System.out.println();
-                System.out.println("------ CODE ASML GENERE  ------");
-                NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef((AsmtAsml)expression.accept(new VisiteurGenererArbreAsml())), new ArrayList<>());
-                arbreAsml.accept(new VisiteurGenererCodeAsml(System.out));
-                System.out.println();  
-                // System.out.println("------ PROGRAMME APRES 13 BIT IMMEDIATE OPTIMIZATION (ET ETAPES PRECEDENTES)   ------");
-                // arbreAsml = arbreAsml.accept(new VisiteurImmediatConstante());
-                // arbreAsml = arbreAsml.accept(new VisiteurImmediatDefinition());  
-                // arbreAsml.accept(new VisiteurGenererCodeAsml(System.out));
-                System.out.println("------ EMPLACEMENT MEMOIRE DES VARIABLES ------");
-                VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile();
-                arbreAsml.accept(visAllocationRegistre);
-                System.out.println(visAllocationRegistre.getEmplacementsVar());
-                System.out.println();
-                System.out.println("------ LABELS (FONCTION ET FLOAT) DU PROGRAMME ------");
-                VisiteurListeLabels visListeLabels = new VisiteurListeLabels();
-                arbreAsml.accept(visListeLabels);
-                System.out.println(visListeLabels.getLabels());
-                System.out.println();
-                System.out.println("------ CODE ARM GENERE ------");
-                arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), System.out, visListeLabels.getLabels()));
-                System.out.println();
-  }
-  
-  private static void testerBackend(String nomFichierEntree)
-  {
-                System.out.println("=======================================================");
-                System.out.println("======   "+nomFichierEntree+" ======");
-                System.out.println("=======================================================");
-                Parser p = null;
-                try
-                {
-                    p = new Parser(new Lexer(new FileReader(nomFichierEntree)));
-                }
-                catch(FileNotFoundException e)
-                {
-                    throw new CompilationException("Le fichier à compiler n'existe pas");
-                }
-                Exp expression;      
-                try {
-                    expression = (Exp) p.parse().value;
-                } catch (Exception ex) {
-                    throw new CompilationException(ex.getMessage());
-                }
-                assert (expression != null);
-                System.out.println("------ ENTREE ------");
-                expression.accept(new PrintVisitor());
-                System.out.println();
-                System.out.println("------ LISTE EQUATIONS DE TYPE NON RESOLUES ------");
-                // let x = (let y = 1 in 1) in ()
-                // Var x = new Var(Id.gen());
-                // Var y = new Var(Id.gen());
-                // expression = new Let(x.getId(), Type.gen(), new Let(y.getId(), Type.gen(), new Int(1), new Int(1)), new Unit());
-                LinkedList<EquationType> equationsType = expression.accept(new VisiteurGenererEquationType());
-                for(EquationType equationType : equationsType)
-                {                
-                    System.out.println(equationType.getT1()+" = "+equationType.getT2());
-                }
-                System.out.println(); 
-                System.out.println("------ LISTE EQUATIONS DE TYPE RESOLUES ------");
-                equationsType = SolveurEquationType.resoudreEquations(equationsType);
-                for(EquationType equationType : equationsType)
-                {                
-                    System.out.println(equationType.getT1()+" = "+equationType.getT2());
-                }
-                System.out.println();                
-                System.out.println("------ CODE ASML GENERE  ------");
-                NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef((AsmtAsml)expression.accept(new VisiteurGenererArbreAsml())), new ArrayList<>());
-                arbreAsml.accept(new VisiteurGenererCodeAsml(System.out));
-                System.out.println();  
-                // System.out.println("------ PROGRAMME APRES 13 BIT IMMEDIATE OPTIMIZATION (ET ETAPES PRECEDENTES)   ------");
-                // arbreAsml = arbreAsml.accept(new VisiteurImmediatConstante());
-                // arbreAsml = arbreAsml.accept(new VisiteurImmediatDefinition());
-                // arbreAsml.accept(new VisiteurGenererCodeAsml(System.out));
-                System.out.println("------ EMPLACEMENT MEMOIRE DES VARIABLES ------");
-                VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile();
-                arbreAsml.accept(visAllocationRegistre);
-                System.out.println(visAllocationRegistre.getEmplacementsVar());
-                System.out.println();
-                System.out.println("------ LABELS (FONCTION ET FLOAT) DU PROGRAMME ------");
-                VisiteurListeLabels visListeLabels = new VisiteurListeLabels();
-                arbreAsml.accept(visListeLabels);
-                System.out.println(visListeLabels.getLabels());
-                System.out.println();
-                System.out.println("------ CODE ARM GENERE ------");
-                arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), System.out, visListeLabels.getLabels()));
-                System.out.println();
-  }
-  
-  private static void compilerFichiersRepertoire(File fichier, boolean doitLancerUneException, boolean testerSeulementBackend) {
-        if(fichier.isDirectory())
-        {
-            for(File fichiers : fichier.listFiles())
-            {
-                compilerFichiersRepertoire(fichiers, doitLancerUneException, testerSeulementBackend);
-            }
-        }
-        else
-        {
-            Exception ex = null;
-            try
-            {            
-                if(testerSeulementBackend)
-                {
-                    testerBackend(fichier.getPath());
-                }
-                else
-                {                    
-                    compiler(fichier.getPath());
-                }
-            }
-            catch(Exception e)
-            {
-                ex = e;//throw e;
-            }
-            finally
-            {
-                if(doitLancerUneException != (ex != null))
-                {
-                    throw ((ex == null) ? new RuntimeException("Un programme invalide a passé la compilation") : new RuntimeException(ex.getMessage()));
-                }
-            }
-        }
-    }
- }
-
-
-
-
-
- */
-
-// MAIN QUI RESPECTE l'INTERFACE EN LIGNE DE COMMANDE
-import arbremincaml.Exp;
-import arbremincaml.Parser;
-import arbremincaml.Lexer;
-import EXEMPLESASUPPRIMER.*;
-import arbreasml.*;
-import backend.*;
-import frontend.*;
-import java.io.*;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import typage.*;
@@ -309,12 +17,12 @@ public class Main {
     private static final int CODE_RETOUR_ERREUR = 1;
     
     public static void main(String argv[]) {
-        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid");
+        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid");
         for (File fichier : dossierTests.listFiles()) {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }*/
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\TESTEVALUATIONSH\\valid\\array_sum.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\funcomp.ml", "-o", "out.s"};
         lancerCompilateur(argv);
     }
 
@@ -385,11 +93,12 @@ public class Main {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            if (e.getMessage() == null || e.getMessage().isEmpty()) {
-                System.err.println("Exception " + e.getClass().getName() + " levée");
-            } else {
-                System.err.println(e.getMessage());
+            //e.printStackTrace();
+            String message = e.getMessage();
+            System.err.println("Exception " + e.getClass().getName() + " levée");
+            if(message != null && !message.isEmpty())
+            {
+                System.err.println(" " + message);
             }
             System.exit(CODE_RETOUR_ERREUR);
         }
@@ -464,11 +173,13 @@ public class Main {
                 /* ========= */ System.out.println("======================APRES DEF INUTILES");
                 expression.accept(new PrintVisitor());
                 System.out.println();
-                expression = expression.accept(new VisiteurConversionClosure());
+                VisiteurConversionClosure vClosure = new VisiteurConversionClosure();
+                expression.accept(vClosure);
                 /* ========= */ System.out.println("======================APRES CONV CLOSURE");
-                expression.accept(new PrintVisitor());
+                HashMap<String, EnvironnementClosure> closures = vClosure.getClosures();
+                closures.forEach((k,v)->System.out.println(k+" est une closure avec pour variable(s) libre(s) "+v.getVariablesLibres()));
                 System.out.println();
-                VisiteurGenererArbreAsml visGenAbAsml = new VisiteurGenererArbreAsml();
+                VisiteurGenererArbreAsml visGenAbAsml = new VisiteurGenererArbreAsml(closures);
                 AsmtAsml corpsFunMain = (AsmtAsml) expression.accept(visGenAbAsml);
                 NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef(corpsFunMain), visGenAbAsml.getFunDefs());
                 /* ========= */ System.out.println("======================ASML");
@@ -477,7 +188,7 @@ public class Main {
                     PrintStream fichierSortieASML = new PrintStream(nomFichierSortie);
                     arbreAsml.accept(new VisiteurGenererCodeAsml(fichierSortieASML));
                 } else {
-                    VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile();
+                    VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile(closures);
                     arbreAsml.accept(visAllocationRegistre);/* ========= */ System.out.println("\n======================EMPLACEMENTS DES VARIABLES");
                     System.out.println(visAllocationRegistre.getEmplacementsVar());
                     System.out.println();                    

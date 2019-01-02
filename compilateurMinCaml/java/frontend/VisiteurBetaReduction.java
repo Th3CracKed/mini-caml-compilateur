@@ -1,10 +1,8 @@
 package frontend;
 
-import arbremincaml.Id;
-import arbremincaml.Var;
-import arbremincaml.Exp;
-import arbremincaml.Let;
+import arbremincaml.*;
 import java.util.HashMap;
+import java.util.List;
 import visiteur.ObjVisitorExp;
 
 public class VisiteurBetaReduction extends ObjVisitorExp {
@@ -21,13 +19,37 @@ public class VisiteurBetaReduction extends ObjVisitorExp {
       Exp e1 = e.getE1().accept(this);
       Id id = e.getId();
       String idString = id.getIdString();
+      Var ancienRenommage = valeursVariable.get(idString);
       if(e1 instanceof Var)
       {
           valeursVariable.put(idString, (Var)e1);
       }
       Exp e2 = e.getE2().accept(this);
-      valeursVariable.remove(idString); // la methode remove de la classe HashMap supprime l'element s'il est present et ne fait rien sinon
+      valeursVariable.put(idString, ancienRenommage);
       return new Let(id, e.getT(), e1 , e2);
+    }
+    
+    @Override
+    public LetTuple visit(LetTuple e) {
+      Exp e1 = e.getE1().accept(this);
+      List<Id> ids = e.getIds();
+      HashMap<String, Var> anciensRenommages = new HashMap<>();
+      if(e1 instanceof Tuple)
+      {          
+          for(int i = 0 ; i < ids.size(); i++)
+          {
+                Exp composante = ((Tuple) e1).getEs().get(i);
+                if(composante instanceof Var)
+                {
+                    String idString = ids.get(i).getIdString();
+                    anciensRenommages.put(idString, valeursVariable.get(idString));
+                    valeursVariable.put(idString, (Var)composante);
+                }
+          }
+      }
+      Exp e2 = e.getE2().accept(this);
+      valeursVariable.putAll(anciensRenommages);
+      return new LetTuple(ids, e.getTs(), e1 , e2);
     }
 
     @Override

@@ -3,8 +3,10 @@ package backend;
 import arbreasml.*;
 import arbremincaml.Id;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Stack;
 import util.Constantes;
 import util.GenerateurDeCode;
@@ -35,7 +37,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     //private static final int MIN_IMMEDIAT_SHIFTER_OPERAND = -(int) Math.pow(2, 7);
     //private static final int MAX_IMMEDIAT_SHIFTER_OPERAND = -MIN_IMMEDIAT_SHIFTER_OPERAND-1; // toutes les valeurs sur 8 bits sont valides pour le shifter operand (entre -2^7 et 2^7-1)
     
-    private static final int[] REGISTRE_SAUVEGARDES_APPELANT = new int[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3/*, NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE*/, 12, Constantes.LR};
+    private static final Integer[] REGISTRE_SAUVEGARDES_APPELANT = new Integer[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3/*, NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE*/, 12, Constantes.LR};
 
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final HashMap<Integer, String> registreVersChaine;
@@ -233,7 +235,15 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
     private void chargerValeur(VarOuIntAsml e, int numReg, int numRegBase) {
         if (e instanceof VarAsml) {
-            loadStoreWorker(emplacementVariable(((VarAsml) e).getIdString()), numReg, LDR, numRegBase);
+            String idString = ((VarAsml)e).getIdString();
+            if(Id.estUnLabel(idString))
+            {
+                ecrireAvecIndentation(LDR+" "+strReg(numReg)+", ="+idString+"\n");
+            }
+            else
+            {
+                loadStoreWorker(emplacementVariable(idString), numReg, LDR, numRegBase);
+            }
         } else // if(e instanceof IntAsml)
         {
             int valeur = ((IntAsml)e).getValeur();
@@ -415,8 +425,9 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 {
                     VarOuIntAsml param = (i == 0)?param0:param1;      
                     if(param instanceof IntAsml)
-                    {                        
-                        ecrireAvecIndentation("LDR " + strReg(Constantes.REGISTRES_PARAMETRES[i]) + ", ="+((IntAsml)param).getValeur()+"\n");
+                    {         
+                        String strRegistre = strReg(Constantes.REGISTRES_PARAMETRES[i]);
+                        ecrireAvecIndentation("LDR " + strRegistre + ", ="+((IntAsml)param).getValeur()+"\n");
                     }
                     else // if(param instanceof VarAsml)
                     {
@@ -425,10 +436,22 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 }
                 else
                 {      
-                    chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
-                    ecrireAvecIndentation("MOV " + strReg(Constantes.REGISTRES_PARAMETRES[i]) + ", ");
-                    visitOperande1Worker(e.getArguments().get(i));
-                    ecrire("\n");
+                    EmplacementMemoire emplacementParam = emplacementVariable(e.getArguments().get(i).getIdString());
+                    if(emplacementParam instanceof Registre && Arrays.<Integer>asList(Constantes.REGISTRES_PARAMETRES).contains(((Registre)emplacementParam).getNumeroRegistre()))
+                    {
+                        // pour le programme let rec f x y = let rec g z t = z - t in g y x in f 1 2, g passe ses parametres dans l'ordre inverse, et si on ne gere pas ce cas, 
+                        // le code genere serait MOV R0, R1; MOV R1, R0 (qui est faux car cela correspond a l'appel g y y). Pour eviter cela lorsqu'une fonction passe ses
+                        // parametres a une autre, les valeurs des parametres sont chargee depuis la pile (elles sont presentes pour la sauvegarde du contexte par l'appelant
+                        int indRegSauvegardeAppelant = Arrays.<Integer>asList(REGISTRE_SAUVEGARDES_APPELANT).indexOf(((Registre)emplacementParam).getNumeroRegistre());
+                        loadStoreWorker(new AdressePile(indRegSauvegardeAppelant * Constantes.TAILLE_MOT_MEMOIRE), Constantes.REGISTRES_PARAMETRES[i], LDR, Constantes.SP);
+                    }
+                    else
+                    {
+                        chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
+                        ecrireAvecIndentation("MOV " + strReg(Constantes.REGISTRES_PARAMETRES[i]) + ", ");                    
+                        visitOperande1Worker(e.getArguments().get(i));
+                        ecrire("\n");
+                    }
                 }
             } else {
                 chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
@@ -436,36 +459,45 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 //loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
             }            
         }
-        ecrireAvecIndentation("BL ");
-        if (e.getIdString().equals(Constantes.PRINT_INT_ASML)) {
-            ecrire(Constantes.PRINT_INT_ARM);
-        } else if (e.getIdString().equals(Constantes.PRINT_NEWLINE_ASML)) {
-            ecrire(Constantes.PRINT_NEWLINE_ARM);
-        }  // il n'y a rien a faire pour les fonctions CREATE_ARRAY_ASML, CREATE_FLOAT_ARRAY_ASML,SIN_ASML et COS_ASML qui ont le meme nom en asml et en arm
-        /*else if (e.getIdString().equals(Constantes.SQRT_ASML)) {
-            throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.ABS_FLOAT_ASML)) {
-            throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.INT_OF_FLOAT_ASML)) {
-            throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.FLOAT_OF_INT_ASML)) {
-            throw new NotYetImplementedException();
-        } else if (e.getIdString().equals(Constantes.TRUNCATE_ASML)) {
-            throw new NotYetImplementedException();
-        } */else {
-            ecrire(e.getIdString());
+       
+        
+        String idString = e.getIdString();
+        if (Id.estUnLabel(idString)) {
+            ecrireAvecIndentation("BL ");            
+            if (idString.equals(Constantes.PRINT_INT_ASML)) {
+                ecrire(Constantes.PRINT_INT_ARM);
+            } else if (idString.equals(Constantes.PRINT_NEWLINE_ASML)) {
+                ecrire(Constantes.PRINT_NEWLINE_ARM);
+            }  // il n'y a rien a faire pour les fonctions CREATE_ARRAY_ASML, CREATE_FLOAT_ARRAY_ASML,SIN_ASML et COS_ASML qui ont le meme nom en asml et en arm
+            /*else if (idString.equals(Constantes.SQRT_ASML)) {
+                throw new NotYetImplementedException();
+            } else if (idString.equals(Constantes.ABS_FLOAT_ASML)) {
+                throw new NotYetImplementedException();
+            } else if (idString.equals(Constantes.INT_OF_FLOAT_ASML)) {
+                throw new NotYetImplementedException();
+            } else if (idString.equals(Constantes.FLOAT_OF_INT_ASML)) {
+                throw new NotYetImplementedException();
+            } else if (idString.equals(Constantes.TRUNCATE_ASML)) {
+                throw new NotYetImplementedException();
+            } */        
+            else
+            {            
+                ecrire(e.getIdString());
+            }
         }
-        /*
-         = "_min_caml_create_array";
-    public static final String  = "_min_caml_create_float_array";
-    public static final String  = "_min_caml_sin";
-    public static final String  = "_min_caml_cos";
-    public static final String  = "_min_caml_sqrt";
-    public static final String  = "_min_caml_abs_float";
-    public static final String  = "_min_caml_int_of_float";
-    public static final String  = "_min_caml_float_of_int";
-    public static final String 
-        */
+        else // le noeud visite est un CallClosureAsml transforme en CallAsml
+        {                
+            String strRegistre = null;
+            EmplacementMemoire emplacementAdrFun = emplacementVariable(e.getArguments().get(0).getIdString());
+            int numReg = NUM_REGISTRE_OPERANDE1;
+            strRegistre = strReg(numReg);      
+            chargerValeur(e.getArguments().get(0), numReg, Constantes.FP);
+            ecrireAvecIndentation("LDR "+strRegistre+", [");
+            visitOperande1Worker(e.getArguments().get(0));
+            ecrire("]\n");
+            ecrireAvecIndentation("MOV "+LR+", "+PC+"\n");  
+            ecrireAvecIndentation("BX "+strRegistre);
+        }
         ecrireAvecIndentation("\n");
         ecrireAvecIndentation("MOV " + strReg(NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR) + ", " + strReg(Constantes.REGISTRE_VALEUR_RETOUR) + "\n");
         //strDestination();
@@ -520,60 +552,55 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     }
 
     @Override
-    public void visit(ProgrammeAsml e) {
-        ecrire(".text\n");
-        ecrire(".global " + Constantes.NOM_FONCTION_MAIN_ARM + "\n");
-        ecrire(Constantes.CREATE_ARRAY_ARM+":\n");
-        augmenterNiveauIndentation();
-        
-        /*String strRegProchainAdrAllouee = strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE);
-        String strRegParam0Retour = strReg(Constantes.REGISTRE_VALEUR_RETOUR);
-        String strRegTailleRestante = strReg(Constantes.REGISTRES_PARAMETRES[2]);
-        ecrireAvecIndentation("CMP "+strRegParam0Retour+", #"+0+"\n");
-        ecrireAvecIndentation("BLE "+Constantes.EXIT_ARM+"\n"); // arret du programme si l'allocation d'un tableau de taille inferieure ou egale 0 est demandee
-        ecrireAvecIndentation("MOV "+strRegTailleRestante+", "+strRegParam0Retour+"\n");
-        ecrireAvecIndentation("MOV "+strRegParam0Retour+", "+strRegProchainAdrAllouee+"\n");
-        ecrire(Constantes.CREATE_ARRAY_BOUCLE_ARM+":\n");
-        ecrireAvecIndentation("STR "+strReg(Constantes.REGISTRES_PARAMETRES[1])+", ["+strRegProchainAdrAllouee+"]\n");
-        ecrireAvecIndentation("SUB "+strRegTailleRestante+", "+strRegTailleRestante+", #"+1+"\n");
-        ecrireAvecIndentation("ADD "+strRegProchainAdrAllouee+", "+strRegProchainAdrAllouee+", #"+Constantes.TAILLE_MOT_MEMOIRE+"\n");
-        ecrireAvecIndentation("CMP "+strRegTailleRestante+", #"+0+"\n");
-        ecrireAvecIndentation("BNE "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");
-        ecrireAvecIndentation("BX "+LR+"\n\n");
-        diminuerNiveauIndentation();*/
+    public void visit(ProgrammeAsml e) {        
         String[] r = new String[Constantes.REGISTRES_PARAMETRES.length];
         for(int i = 0 ; i < r.length ; i++)
         {
             r[i] = strReg(Constantes.REGISTRES_PARAMETRES[i]);
         }
+        ecrire(".text\n");
+        ecrire(".global " + Constantes.NOM_FONCTION_MAIN_ARM + "\n");
+        ecrire(Constantes.CREATE_ARRAY_ARM+":\n");
+        augmenterNiveauIndentation();
+        ecrireAvecIndentation("LSL "+r[0]+", "+r[0]+", #"+2+"          @ multiplier r0 par 4 pour que r0 ait pour valeur le nombre d'octet a allouer\n"); 
         ecrireAvecIndentation("MOV "+r[2]+", "+r[0]+"            @ met la taille restante a initialiser dans r2 \n"); 
-        ecrireAvecIndentation("LDR "+r[0]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r0 \n"); // 
-        ecrireAvecIndentation("LDR "+r[0]+", ["+r[0]+"]            @charge le pointeur sur le debut de la prochaine zone a allouer dans r0 \n"); // 
-        ecrireAvecIndentation("MOV "+r[3]+", "+r[0]+"            @stocke l'adresse du prochain mot memoire a initialiser dans r3\n");
+        ecrireAvecIndentation("LDR "+r[3]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @ charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r3 \n"); // 
+        ecrireAvecIndentation("LDR "+r[3]+", ["+r[3]+"]            @ charge le pointeur sur le debut de la prochaine zone a allouer dans r3 \n");
         ecrire(Constantes.CREATE_ARRAY_BOUCLE_ARM+":\n");
-        ecrireAvecIndentation("STR "+r[1]+", ["+r[3]+"]            @initialise le prochain mot memoire avec la valeur du deuxieme parametre de la fonction\n");
-        ecrireAvecIndentation("SUB "+r[2]+", "+r[2]+", #"+1+"            @ decremente la taille restante a initialiser\n");
-        ecrireAvecIndentation("ADD "+r[3]+", "+r[3]+", #"+Constantes.TAILLE_MOT_MEMOIRE+"            @stocke l'adresse du prochain mot memoire a initialiser dans r3 \n");
-        ecrireAvecIndentation("CMP "+r[2]+", #"+0+"            @compare la taille restante a initialiser a 0\n");
-        ecrireAvecIndentation("BGT "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"            @si la taille restante a initialiser est strictement positive, aller a "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");
-        ecrireAvecIndentation("LDR "+r[2]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r2\n");
+        ecrireAvecIndentation("STR "+r[1]+", ["+r[3]+"]            @ initialise le prochain mot memoire avec la valeur du deuxieme parametre de la fonction\n");
+        ecrireAvecIndentation("SUB "+r[2]+", "+r[2]+", #"+Constantes.TAILLE_MOT_MEMOIRE+"            @ decremente la taille restante a initialiser de 4\n");
+        ecrireAvecIndentation("ADD "+r[3]+", "+r[3]+", #"+Constantes.TAILLE_MOT_MEMOIRE+"            @ stocke l'adresse du prochain mot memoire a initialiser dans r3 \n");
+        ecrireAvecIndentation("CMP "+r[2]+", #"+0+"            @ compare la taille restante a initialiser a 0\n");
+        ecrireAvecIndentation("BGT "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"            @ si la taille restante a initialiser est strictement positive, aller a "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");
+        ecrire(Constantes.NEW_ARM+":\n");
+        ecrireAvecIndentation("MOV "+r[2]+", "+r[0]+"            @ met la taille restante a allouer dans r2 \n"); 
+        ecrireAvecIndentation("LDR "+r[0]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @ charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r0 \n"); // 
+        ecrireAvecIndentation("LDR "+r[0]+", ["+r[0]+"]            @ charge le pointeur sur le debut de la prochaine zone a allouer dans r0 \n"); // 
+        ecrireAvecIndentation("ADD "+r[3]+", "+r[0]+", "+r[2]+"          @ stocke la nouvelle valeur du pointeur sur le debut de la prochaine zone a allouer dans r3 (son ancienne valeur a laquelle on ajoute la taille allouee)\n");
+        ecrireAvecIndentation("LDR "+r[2]+", ="+Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM+"            @ charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r2\n");
         ecrireAvecIndentation("STR "+r[3]+", ["+r[2]+"]            @ecrit la nouvelle valeur du pointeur sur le debut de la prochaine zone a allouer\n");
         ecrireAvecIndentation("BX "+LR+"            @aller a l'adresse dans lr (instruction return)\n\n");
-        /*
-        _min_caml_create_array:
-            MOV R2, R0
-            LDR R0, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM
-            LDR R0, [R0]
-            MOV R3, R0
+        /*       
+        _min_caml_create_array:   
+            LSL R0, R0, #2          @ multiplier r0 par 4 pour que r0 ait pour valeur le nombre d'octet a allouer
+            MOV R2, R0          @ met la taille restante a initialiser dans r2
+            LDR R0, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM          @ charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r0
+            LDR R0, [R0]          @ charge le pointeur sur le debut de la prochaine zone a allouer dans r0
+            MOV R3, R0          @ stocke l'adresse du prochain mot memoire a initialiser dans r3
         create_array_boucle:
-            STR R1, [R3]
-            SUB R2, R2, #1
-            ADD R3, R3, #4
-            CMP R2, #0
-            BGT create_array_boucle
-            LDR R2, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM
-            STR R3, [R2]
-            BX LR
+            STR R1, [R3]          @ initialise le prochain mot memoire avec la valeur du deuxieme parametre de la fonction
+            SUB R2, R2, #4          @ decremente la taille restante a initialiser de 4
+            ADD R3, R3, #4          @ stocke l'adresse du prochain mot memoire a initialiser dans r3
+            CMP R2, #0          @compare la taille restante a initialiser a 0
+            BGT create_array_boucle          @ si la taille restante a initialiser est strictement positive, aller a Constantes.CREATE_ARRAY_BOUCLE_ARM
+        allouer_memoire:
+            MOV R2, R0          @ met la taille restante a allouer dans r2
+            LDR R0, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM          @ charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r0
+            LDR R0, [R0]          @ charge le pointeur sur le debut de la prochaine zone a allouer dans r0
+            ADD R3, R0, R2          @ stocke la nouvelle valeur du pointeur sur le debut de la prochaine zone a allouer dans r3 (son ancienne valeur a laquelle on ajoute la taille allouee)
+            LDR R2, =Constantes.DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM          @ charge l'adresse du pointeur sur le debut de la prochaine zone a allouer dans r2
+            STR R3, [R2]          @ ecrit la nouvelle valeur du pointeur sur le debut de la prochaine zone a allouer
+            BX LR          @ aller a l'adresse dans lr (instruction return)
         
         */
         for (FunDefAsml funDef : e.getFunDefs()) {
@@ -620,12 +647,18 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
     @Override
     public void visit(CallClosureAsml e) {
-        throw new NotYetImplementedException();
+        List<VarAsml> arguments = e.getArguments();
+        VarAsml var = e.getVar();
+        arguments.add(0, var);
+        CallAsml call = new CallAsml(var.getIdString(), arguments);
+        call.accept(this);
     }
     
     @Override
     public void visit(NewAsml e) {
-        visitCallWorker(new CallAsml(Constantes.CREATE_ARRAY_ASML, Arrays.asList(null, null)), e.getE(), new IntAsml(0));
+        List<VarAsml> parametres = new ArrayList<>();
+        parametres.add(null);
+        visitCallWorker(new CallAsml(Constantes.NEW_ARM, parametres), e.getE(), null);
     }
 
     private boolean estDecalageImmediatLoadStoreValide(int decalage)
@@ -686,8 +719,8 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     }
 
     private void visitIfEqIntWorker(IfIntAsml e, String instBranchementElse) {
-        String labelElse = Id.genIdStringWithPrefix("sinon");
-        String labelEndIf = Id.genIdStringWithPrefix("finSi");
+        String labelElse = Id.genIdStringAvecPrefixe("sinon");
+        String labelEndIf = Id.genIdStringAvecPrefixe("finSi");
         VarAsml op1 = e.getE1();
         VarOuIntAsml op2 = e.getE2();
         chargerValeur(op1, NUM_REGISTRE_OPERANDE1, Constantes.FP);
@@ -823,7 +856,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
         @Override
         public Integer visit(CallClosureAsml e) {
-            throw new NotYetImplementedException();
+            return 0;
         }
 
         @Override

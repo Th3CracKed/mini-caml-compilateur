@@ -91,19 +91,15 @@ public interface Visitor {
     }
 
     default void visit(Tuple e){
-        throw new NotYetImplementedException();
-        /*
        for(Exp composante : e.getEs())
        {
            composante.accept(this);
-       }*/
+       }
     }
 
     default void visit(LetTuple e){
-        throw new NotYetImplementedException();
-        /*
-       e.getE1().accept(this);
-       e.getE2().accept(this);*/
+        e.getE1().accept(this);
+        e.getE2().accept(this);
     }
 
     default void visit(Array e){

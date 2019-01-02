@@ -2,6 +2,7 @@ package frontend;
 
 import arbremincaml.*;
 import java.util.HashSet;
+import java.util.List;
 import visiteur.ObjVisitorExp;
 import visiteur.Visitor;
 
@@ -35,6 +36,24 @@ public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
             return new LetRec(new FunDef(id, funDef.getType(), funDef.getArgs(), eFunDef), exp);
         } else {
             return exp;
+        }
+    }
+    
+    @Override
+    public Exp visit(LetTuple e)
+    {
+        Exp e2 = e.getE2().accept(this);
+        List<Id> ids = e.getIds();
+        VisiteurVariablesUtilisees visVarUtilisees = new VisiteurVariablesUtilisees();
+        e2.accept(visVarUtilisees);        
+        if (ids.stream().anyMatch(x->visVarUtilisees.getVariablesUtilisees().contains(x.getIdString())))
+        {
+            Exp e1 = e.getE1().accept(this);
+            return new LetTuple(ids, e.getTs(), e1, e2);
+        }
+        else
+        {
+            return e2;
         }
     }
     

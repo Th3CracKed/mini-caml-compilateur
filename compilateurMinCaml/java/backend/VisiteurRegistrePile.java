@@ -1,6 +1,7 @@
 package backend;
 
 import arbreasml.*;
+import frontend.EnvironnementClosure;
 import java.util.HashMap;
 import java.util.Stack;
 import util.Constantes;
@@ -13,17 +14,19 @@ public class VisiteurRegistrePile implements VisiteurAsml {
     private final Stack<EmplacementMemoire> anciensDecalages;
     
     private final HashMap<String, EmplacementMemoire> emplacementsVar;
+    private final HashMap<String, EnvironnementClosure> closures;
     
     public HashMap<String, EmplacementMemoire> getEmplacementsVar()
     {
         return emplacementsVar;
     }
     
-    public VisiteurRegistrePile()
+    public VisiteurRegistrePile(HashMap<String, EnvironnementClosure> closures)
     {
         remettreDecalageAZero();
         anciensDecalages = new Stack<>();
         emplacementsVar = new HashMap<>();
+        this.closures = closures;
     }
     
     private void remettreDecalageAZero()
@@ -72,17 +75,24 @@ public class VisiteurRegistrePile implements VisiteurAsml {
     @Override
     public void visit(FunDefConcreteAsml e)
     {
+        int nbParametresSupplementaires = 0;
+        if(closures.containsKey(e.getLabel()))
+        {
+            nbParametresSupplementaires = 1;
+            emplacementsVar.putIfAbsent(Constantes.SELF_ASML, new Registre(Constantes.REGISTRES_PARAMETRES[0])); 
+        }
         remettreDecalageAZero();
         for(int i = 0 ; i < e.getArguments().size() ; i++)
         {
+            int j = i + nbParametresSupplementaires;
             EmplacementMemoire emplacement = null;
-            if(i<Constantes.REGISTRES_PARAMETRES.length)
+            if(j<Constantes.REGISTRES_PARAMETRES.length)
             {
-                emplacement = new Registre(Constantes.REGISTRES_PARAMETRES[i]);
+                emplacement = new Registre(Constantes.REGISTRES_PARAMETRES[j]);
             }
             else
             {
-                emplacement = new AdressePile((e.getArguments().size()-i+Constantes.REGISTRE_SAUVEGARDES_APPELE.length)*Constantes.TAILLE_MOT_MEMOIRE);
+                emplacement = new AdressePile((e.getArguments().size()-j+Constantes.REGISTRE_SAUVEGARDES_APPELE.length)*Constantes.TAILLE_MOT_MEMOIRE);
             }
             emplacementsVar.put(e.getArguments().get(i).getIdString(), emplacement);
         }

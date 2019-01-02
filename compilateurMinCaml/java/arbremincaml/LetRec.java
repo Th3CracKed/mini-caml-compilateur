@@ -6,11 +6,11 @@ import visiteur.Visitor;
 public class LetRec extends Exp {
     private final FunDef fd;
     private final Exp e;
-
+        
     public LetRec(FunDef fd, Exp e) {
         this.fd = fd;
         this.e = e;
-    }
+    }    
 
     @Override
     public <E> E accept(ObjVisitor<E> v) {

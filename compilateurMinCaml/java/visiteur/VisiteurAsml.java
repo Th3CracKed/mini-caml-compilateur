@@ -73,13 +73,12 @@ public interface VisiteurAsml {
     }
 
     default void visit(CallAsml e) {
-        for (VarAsml argument : e.getArguments()) {
-            argument.accept(this);
-        }
+        UtilVisiteur.visitCallBaseWorker(e, this);
     }
 
     default void visit(CallClosureAsml e) {
-        throw new NotYetImplementedException();
+        e.getVar().accept(this);
+        UtilVisiteur.visitCallBaseWorker(e, this);
     }
 
     default void visit(MemLectureAsml e) {

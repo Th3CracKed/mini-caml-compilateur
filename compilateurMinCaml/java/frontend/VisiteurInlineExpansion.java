@@ -1,8 +1,10 @@
 package frontend;
 
 import arbremincaml.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import util.Constantes;
 import util.NotYetImplementedException;
 import visiteur.*;
@@ -166,22 +168,17 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
 
         @Override
         public Integer visit(App e) {
-            int resultat = 1;
-            for(Exp arg : e.getEs())
-            {
-                resultat += arg.accept(this);
-            }
-            return resultat;
+            return 1 + e.getEs().stream().mapToInt(x->x.accept(this)).sum();
         }
 
         @Override
         public Integer visit(Tuple e) {
-            throw new NotYetImplementedException();
+            return 1 + e.getEs().stream().mapToInt(x->x.accept(this)).sum();
         }
 
         @Override
         public Integer visit(LetTuple e) {
-            throw new NotYetImplementedException();
+            return 1 + e.getE1().accept(this) + e.getE2().accept(this);
         }
 
         @Override
@@ -225,7 +222,12 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
         public Exp visit(LetRec e){
            Exp exp = e.getE().accept(this);
            FunDef funDef = e.getFd();
-           FunDef nouvelleFunDef = new FunDef(new Id(funDef.getId().getIdString()), funDef.getType(), funDef.getArgs(), funDef.getE().accept(this));
+           List<Id> nouveauxArgs = new ArrayList<>();
+           for(Id idArg : funDef.getArgs())
+           {
+               nouveauxArgs.add(new Id(idArg.getIdString()));
+           }
+           FunDef nouvelleFunDef = new FunDef(new Id(funDef.getId().getIdString()), funDef.getType(), nouveauxArgs, funDef.getE().accept(this));
           return new LetRec(nouvelleFunDef, exp);
         }
     }

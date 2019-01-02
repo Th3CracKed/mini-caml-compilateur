@@ -121,9 +121,8 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
         throw new NotYetImplementedException();
     }
 
-    @Override
-    public void visit(CallAsml e) {
-        ecrireAvecIndentation("call "+e.getIdString());
+    private void visitCallWorker(CallBaseAsml e)
+    {
         if(e.getArguments().isEmpty())
         {
             ecrire(" ()");
@@ -137,10 +136,17 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
             }
         }
     }
+    
+    @Override
+    public void visit(CallAsml e) {
+        ecrireAvecIndentation("call "+e.getIdString());
+        visitCallWorker(e);
+    }
 
     @Override
     public void visit(CallClosureAsml e) {
-        throw new NotYetImplementedException();
+        ecrireAvecIndentation("call_closure "+e.getVar().getIdString());
+        visitCallWorker(e);
     }    
 
     @Override

@@ -2,11 +2,11 @@ package backend;
 
 public class AdressePile extends EmplacementMemoire {
     
-    private final int decalageFP;
+    private final int decalage;
     
     public AdressePile(int decalageFP)
     {
-        this.decalageFP = decalageFP;
+        this.decalage = decalageFP;
     }
     
     @Override
@@ -16,6 +16,6 @@ public class AdressePile extends EmplacementMemoire {
     }
 
     public int getDecalage() {
-        return decalageFP;
+        return decalage;
     }
 }

@@ -9,7 +9,7 @@ public class Constantes {
     
     // numéros de registre
     public static final int REGISTRE_VALEUR_RETOUR = 0;
-    public static final int[] REGISTRES_PARAMETRES = new int[] {REGISTRE_VALEUR_RETOUR,1,2,3};
+    public static final Integer[] REGISTRES_PARAMETRES = new Integer[] {REGISTRE_VALEUR_RETOUR,1,2,3};
     public static final int[] REGISTRES_VAR_LOCALES = new int[] {4,5,6,7,8,9,10,12};
     public static final int FP = 11;
     public static final int SP = 13;
@@ -31,6 +31,12 @@ public class Constantes {
     
     // fonction principale asml
     public static final String NOM_FONCTION_MAIN_ASML = "_";
+    
+    // self (closure de la fonction courante) en asml
+    public static final String SELF_ASML = "%self";
+    
+    
+    public static final String DEBUT_LABEL_ASML = "_";
         
     // mots reserves asml (seulement ceux qui pourraient être des identificateurs valides)
     public static final List<String> MOTS_RESERVES_ASML = Arrays.asList("if", "then", "else", "let", "in", "neg", /*"fneg", "mem", "fmul", "fdiv", "fsub", "fadd",*/ "add", "sub", "call", /*"new",*/ "nop"/*, "apply_closure"*/);
@@ -64,13 +70,14 @@ public class Constantes {
     public static final List<String> FONCTION_EXTERNES_ARM = Arrays.asList(PRINT_INT_ARM, PRINT_NEWLINE_ARM, CREATE_ARRAY_ARM/*, CREATE_FLOAT_ARRAY_ARM, SIN_ARM, COS_ARM */);
     
     public static final String EXIT_ARM = "min_caml_exit";
+    public static final String NEW_ARM = DEBUT_LABEL_ASML+"allouer_memoire";
     public static final String CREATE_ARRAY_BOUCLE_ARM = "create_array_boucle";
     public static final String ZONE_MEMOIRE_DYNAMIQUE_ARM = "zone_dynamique";
     public static final String DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM = "debut_zone_dynamique";
-    // fonctions presentes dans libMinCaml.S mais que l'utilisateur ne peut pas appeler comme les fonctions externes. Par exemple,
+    // labels presents dans libMinCaml.S mais que l'utilisateur ne peut pas manipuler comme les fonctions externes. Par exemple,
     // min_caml_print_int appelle min_caml_print_string qui elle meme appelle stringlength mais le programmeur MinCaml ne peut pas appeler stringlength directement.
     // min_caml_exit ne peut pas non plus etre appele explicitement mais est appele automatique a la fin de chaque programme
-    public static final List<String> FONCTION_EXTERNES_PRIVEES_ARM = Arrays.asList(EXIT_ARM, CREATE_ARRAY_BOUCLE_ARM, "stringlength", "stringlength_loop", "stringlength_first", 
+    public static final List<String> LABELS_PRIVES_ARM = Arrays.asList(EXIT_ARM, CREATE_ARRAY_BOUCLE_ARM, ZONE_MEMOIRE_DYNAMIQUE_ARM, DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM, "stringlength", "stringlength_loop", "stringlength_first", 
                                                                                    "min_caml_print_string", "hello_world_string", "min_caml_hello_world", 
                                                                                    "min_caml_print_char", ".string_for_int", "stringofint", ".i2s_non_zero", 
                                                                                    ".i2s_positive", ".i2s_exit", ".i2s_constants");

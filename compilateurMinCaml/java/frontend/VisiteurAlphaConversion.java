@@ -63,7 +63,7 @@ public class VisiteurAlphaConversion implements Visitor {
       HashMap<String, String> anciensIdsStringArgs = new HashMap<>();
       for(Id argument : funDef.getArgs())
       {
-            String ancienIdStringArg = argument.getIdString();
+            String ancienIdStringArg = argument.getIdString();            
             String nouvelIdStringArg = Id.genIdString();
             String ancienRenommageArg = idsVariable.get(ancienIdStringArg);
             argument.setIdString(nouvelIdStringArg);
@@ -74,6 +74,23 @@ public class VisiteurAlphaConversion implements Visitor {
       idsVariable.putAll(anciensIdsStringArgs);
       e.getE().accept(this);
       idsVariable.put(ancienIdString, ancienRenommage);
+    }
+    
+    @Override
+    public void visit(LetTuple e) {   
+      HashMap<String, String> anciensIdsStringComposante = new HashMap<>();
+      e.getE1().accept(this);
+      for(Id idComposante : e.getIds())
+      {
+            String ancienIdStringComposante = idComposante.getIdString();
+            String nouvelIdStringComposante = Id.genIdString();
+            String ancienRenommageComposante = idsVariable.get(ancienIdStringComposante);
+            idComposante.setIdString(nouvelIdStringComposante);
+            idsVariable.put(ancienIdStringComposante, nouvelIdStringComposante);
+            anciensIdsStringComposante.put(ancienIdStringComposante, ancienRenommageComposante);
+      }
+      e.getE2().accept(this);         
+      idsVariable.putAll(anciensIdsStringComposante);
     }
 
     @Override
