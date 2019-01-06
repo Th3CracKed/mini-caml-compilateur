@@ -8,6 +8,8 @@ import util.MyCompilationException;
 public class Id {
     private String idString;
     private static HashSet<String> idUtilises = initIdUtilises();
+    private static final String DEBUT_LABEL_GENERE_FONCTION_ASML = Constantes.DEBUT_LABEL_ASML+"f";
+    private static final String DEBUT_LABEL_GENERE_FLOAT_ASML = Constantes.DEBUT_LABEL_ASML+"float";
     
     private static HashSet<String> initIdUtilises()
     {
@@ -66,12 +68,18 @@ public class Id {
          return genIdStringAvecPrefixe("v");
     }
     
-    public static String genLabelString()
+    public static String genLabelFonction()
     {
-        return genIdStringAvecPrefixe(Constantes.DEBUT_LABEL_ASML+"f");
+        return genIdStringAvecPrefixe(DEBUT_LABEL_GENERE_FONCTION_ASML);
     }
     
-    public static boolean estUnLabel(String idString) {
+    public static String genLabelFloat()
+    {
+        return genIdStringAvecPrefixe(DEBUT_LABEL_GENERE_FLOAT_ASML);
+    }
+    
+    public static boolean estUnLabel(String idString)
+    {
         return idString.startsWith(Constantes.DEBUT_LABEL_ASML);
     }
 

@@ -4,7 +4,7 @@ import visiteur.ObjVisitor;
 import visiteur.Visitor;
 
 public class Int extends Valeur<Integer> {
-    public Int(Integer i) {
+    public Int(int i) {
         super(i);
     }
 

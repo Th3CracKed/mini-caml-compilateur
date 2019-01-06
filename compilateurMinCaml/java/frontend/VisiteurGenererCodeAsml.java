@@ -2,7 +2,6 @@ package frontend;
 
 import arbreasml.*;
 import java.io.PrintStream;
-import util.NotYetImplementedException;
 import visiteur.VisiteurAsml;
 import util.GenerateurDeCode;
 
@@ -17,6 +16,10 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
     {
         augmenterNiveauIndentation();        
         ecrire("\n");
+        if(e instanceof VarAsml)
+        {
+            ecrireAvecIndentation("");
+        }
         e.accept(this);
         diminuerNiveauIndentation();
     }
@@ -54,13 +57,22 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
         acceptSansIndentationSaufIf(e.getE1());
         ecrire("\n");
         ecrireAvecIndentation("in\n");
-        e.getE2().accept(this);
+        AsmtAsml e2 = e.getE2();
+        if(e2 instanceof VarAsml)
+        {
+            ecrireAvecIndentation("");
+        }
+        e2.accept(this);
     }
 
+    private void visitNegBaseWorker(NegBaseAsml e, String nomOperateur)
+    {
+        ecrireAvecIndentation(nomOperateur+" ");
+        acceptSansIndentationSaufIf(e.getE());
+    }
     @Override
     public void visit(NegAsml e) {
-        ecrireAvecIndentation("neg ");
-        acceptSansIndentationSaufIf(e.getE());
+        visitNegBaseWorker(e, "neg");
     }
 
     @Override
@@ -73,16 +85,30 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
         for(FunDefAsml functionAuxiliaire : e.getFunDefs())
         {            
             functionAuxiliaire.accept(this);
-            ecrire("\n\n");
+            if(functionAuxiliaire instanceof FunDefConcreteAsml)
+            {
+                ecrire("\n\n");
+            }
         }
         e.getMainFunDef().accept(this);
     }
 
-    private void visitOpArithmetiqueIntWorker(OperateurArithmetiqueIntAsml e, String nomOperateur)
+    private void visitOpArithmetiqueWorker(OperateurArithmetiqueAsml e, String nomOperateur)
     {                
         ecrireAvecIndentation(nomOperateur+" ");
         acceptSansIndentationSaufIf(e.getE1());
         ecrire(" ");
+    }
+    
+    private void visitOpArithmetiqueIntWorker(OperateurArithmetiqueIntAsml e, String nomOperateur)
+    {                
+        visitOpArithmetiqueWorker(e, nomOperateur);
+        acceptSansIndentationSaufIf(e.getE2());
+    }
+    
+    private void visitOpArithmetiqueFloatWorker(OperateurArithmetiqueFloatAsml e, String nomOperateur)
+    {                
+        visitOpArithmetiqueWorker(e, nomOperateur);
         acceptSansIndentationSaufIf(e.getE2());
     }
     
@@ -98,27 +124,27 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
 
     @Override
     public void visit(FNegAsml e) {
-        throw new NotYetImplementedException();
+        visitNegBaseWorker(e, "neg");
     }
 
     @Override
     public void visit(FAddAsml e) {
-        throw new NotYetImplementedException();
+        visitOpArithmetiqueFloatWorker(e, "fadd");
     }
 
     @Override
     public void visit(FSubAsml e) {
-        throw new NotYetImplementedException();
+        visitOpArithmetiqueFloatWorker(e, "fsub");
     }
 
     @Override
     public void visit(FMulAsml e) {
-        throw new NotYetImplementedException();
+        visitOpArithmetiqueFloatWorker(e, "fmul");
     }
 
     @Override
     public void visit(FDivAsml e) {
-        throw new NotYetImplementedException();
+        visitOpArithmetiqueFloatWorker(e, "fdiv");
     }
 
     private void visitCallWorker(CallBaseAsml e)
@@ -175,10 +201,11 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
         ecrire(" <- ");
         e.getValeurEcrite().accept(this);
     }
-
+    
     @Override
     public void visit(LetFloatAsml e) {
-        throw new NotYetImplementedException();
+        visitFunDefWorker(e);
+        ecrire(" = "+e.getValeur()+"\n");
     }
 
     private void acceptSansIndentationSaufIf(NoeudAsml e)
@@ -195,18 +222,35 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
         }
     }
     
-    private void visitIfIntWorker(IfIntAsml e, String representationOperateur)
+    private void visitIfWorkerDebut(IfAsml e, String representationOperateur)
     {
         ecrireAvecIndentation("if ");
         acceptSansIndentationSaufIf(e.getE1());        
         ecrire(" "+representationOperateur+" ");
-        acceptSansIndentationSaufIf(e.getE2()); 
+    }
+    
+    private void visitIfWorkerFin(IfAsml e)
+    {
         ecrire("\n");
         ecrireAvecIndentation("then ");
         acceptEtAugmenterIndentation(e.getESiVrai());
         ecrire("\n");
         ecrireAvecIndentation("else ");
         acceptEtAugmenterIndentation(e.getESiFaux());
+    }
+    
+    private void visitIfIntWorker(IfIntAsml e, String representationOperateur)
+    {
+        visitIfWorkerDebut(e, representationOperateur);
+        acceptSansIndentationSaufIf(e.getE2()); 
+        visitIfWorkerFin(e);
+    }
+    
+    private void visitIfFloatWorker(IfFloatAsml e, String representationOperateur)
+    {
+        visitIfWorkerDebut(e, representationOperateur);
+        acceptSansIndentationSaufIf(e.getE2()); 
+        visitIfWorkerFin(e);
     }
     
     @Override
@@ -225,19 +269,12 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
     }
 
     @Override
-    public void visit(IfEquFloatAsml e) {
-        throw new NotYetImplementedException();
+    public void visit(IfEqFloatAsml e) {
+        visitIfFloatWorker(e, "=.");
     }
 
     @Override
     public void visit(IfLEFloatAsml e) {
-        throw new NotYetImplementedException();
-    }
-
-    @Override
-    public void visit(LabelFloatAsml e) {
-        throw new NotYetImplementedException();
-    }
-   
-    
+        visitIfFloatWorker(e, "<=.");
+    }       
 }

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import util.NotYetImplementedException;
 
 public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
     @Override
@@ -25,7 +24,7 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
 
     @Override
     public Exp visit(FloatMinCaml e) { 
-        throw new NotYetImplementedException();
+        return e;
     }
     
     private Exp visitOpUnaireWorker(OperateurUnaire e, Function<Exp, ? extends OperateurUnaire> constructeurOpUnaire)
@@ -70,27 +69,27 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
 
     @Override
     public Exp visit(FNeg e){
-      throw new NotYetImplementedException();
+      return visitOpUnaireWorker(e, FNeg::new);
     }
 
     @Override
     public Exp visit(FAdd e){
-       throw new NotYetImplementedException();
+       return visitOpBinaireWorker(e, FAdd::new); 
     }
 
     @Override
     public Exp visit(FSub e){
-        throw new NotYetImplementedException();
+        return visitOpBinaireWorker(e, FSub::new); 
     }
 
     @Override
     public Exp visit(FMul e) {
-       throw new NotYetImplementedException();
+       return visitOpBinaireWorker(e, FMul::new); 
     }
 
     @Override
     public Exp visit(FDiv e){
-        throw new NotYetImplementedException();
+        return visitOpBinaireWorker(e, FDiv::new); 
     }
 
     @Override
@@ -105,7 +104,7 @@ public abstract class ObjVisitorExp implements ObjVisitor<Exp> {
     public Exp visit(Let e) {
       Exp e1 = e.getE1().accept(this);
       Exp e2 = e.getE2().accept(this);
-      return new Let(e.getId(), e.getT(), e1 , e2);
+      return new Let(e.getId(), Type.gen(), e1 , e2);
     }
 
     @Override

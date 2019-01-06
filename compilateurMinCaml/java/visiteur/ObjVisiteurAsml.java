@@ -26,7 +26,6 @@ public interface ObjVisiteurAsml<E>{
     E visit(IfEqIntAsml e);
     E visit(IfLEIntAsml e);
     E visit(IfGEIntAsml e);
-    E visit(IfEquFloatAsml e);
+    E visit(IfEqFloatAsml e);
     E visit(IfLEFloatAsml e);
-    E visit(LabelFloatAsml e);
 }

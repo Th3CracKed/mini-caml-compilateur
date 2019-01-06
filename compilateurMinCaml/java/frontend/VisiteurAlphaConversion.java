@@ -56,7 +56,7 @@ public class VisiteurAlphaConversion implements Visitor {
       FunDef funDef = e.getFd();
       Id id = funDef.getId();
       String ancienIdString = id.getIdString();
-      String nouvelIdString = Id.genLabelString();
+      String nouvelIdString = Id.genLabelFonction();
       String ancienRenommage = idsVariable.get(ancienIdString);
       id.setIdString(nouvelIdString);
       idsVariable.put(ancienIdString, nouvelIdString);   

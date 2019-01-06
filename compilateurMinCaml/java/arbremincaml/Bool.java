@@ -4,7 +4,7 @@ import visiteur.ObjVisitor;
 import visiteur.Visitor;
 
 public class Bool extends Valeur<Boolean> {
-    public Bool(Boolean b) {
+    public Bool(boolean b) {
         super(b);
     }
     

@@ -1,7 +1,6 @@
 package visiteur;
 
 import arbreasml.*;
-import util.NotYetImplementedException;
 
 public interface VisiteurAsml {
 
@@ -26,7 +25,7 @@ public interface VisiteurAsml {
     }
 
     default void visit(NegAsml e) {
-        e.getE().accept(this);
+        UtilVisiteur.visitNegBaseWorker(e, this);
     }
 
     default void visit(NopAsml e) {
@@ -53,23 +52,23 @@ public interface VisiteurAsml {
     }
 
     default void visit(FNegAsml e) {
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitNegBaseWorker(e, this);
     }
 
     default void visit(FAddAsml e) {
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitOpArithmetiqueFloatWorker(e, this);
     }
 
     default void visit(FSubAsml e) {
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitOpArithmetiqueFloatWorker(e, this);
     }
 
     default void visit(FMulAsml e) {
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitOpArithmetiqueFloatWorker(e, this);
     }
 
     default void visit(FDivAsml e) {
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitOpArithmetiqueFloatWorker(e, this);
     }
 
     default void visit(CallAsml e) {
@@ -91,7 +90,7 @@ public interface VisiteurAsml {
     }
 
     default void visit(LetFloatAsml e) {
-        throw new NotYetImplementedException();
+        
     }
 
     default void visit(IfEqIntAsml e) {
@@ -106,15 +105,11 @@ public interface VisiteurAsml {
         UtilVisiteur.visitIfIntWorker(e, this);
     }
 
-    default void visit(IfEquFloatAsml e) {
-        throw new NotYetImplementedException();
+    default void visit(IfEqFloatAsml e) {
+        UtilVisiteur.visitIfFloatWorker(e, this);
     }
 
     default void visit(IfLEFloatAsml e) {
-        throw new NotYetImplementedException();
-    }
-
-    default void visit(LabelFloatAsml e) {
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitIfFloatWorker(e, this);
     }
 }

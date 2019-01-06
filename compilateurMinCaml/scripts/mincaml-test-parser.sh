@@ -77,7 +77,7 @@ function lancerTest()
 		assertEquals 0 $? "diff ocaml asml"
 		$MINCAMLC "$fichierATester" -o "$sourceAssembleur" 2>/dev/null 1>/dev/null		
 		assertEquals 0 $? "compilation mincaml vers assembleur"
-		arm-eabi-as -o "$objetAssembleur" "$sourceAssembleur" ARM/libmincaml.S  2>/dev/null 1>/dev/null
+		arm-eabi-as -mfpu=vfpv2 -o "$objetAssembleur" "$sourceAssembleur" ARM/libmincaml.S  2>/dev/null 1>/dev/null # l'option -mfpu=vfpv2 est necessaire pour l'increment 6 (nombre flottants)
 		assertEquals 0 $? "compilation assembleur"
 		arm-eabi-ld -o "$executableAssembleur" "$objetAssembleur" 2>/dev/null 1>/dev/null
 		assertEquals 0 $? "edition de lien assembleur"

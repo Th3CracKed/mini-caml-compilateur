@@ -4,14 +4,12 @@ import arbremincaml.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import util.Constantes;
-import util.NotYetImplementedException;
 import visiteur.*;
 
 public class VisiteurInlineExpansion extends ObjVisitorExp {
     
-    private static final int TAILLE_MAX_INLINE_EXPANSION = 100;    
+    private static final int TAILLE_MAX_INLINE_EXPANSION = 10000;    
     private final HashMap<String, FunDef> fonctionAEtendre;
     
     public VisiteurInlineExpansion()
@@ -78,7 +76,7 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
 
         @Override
         public Integer visit(FloatMinCaml e) {
-            throw new NotYetImplementedException();
+            return 1;
         }
 
         private Integer visitOpUnaireWorker(OperateurUnaire e)
@@ -113,27 +111,27 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
 
         @Override
         public Integer visit(FNeg e) {
-            throw new NotYetImplementedException();
+            return visitOpUnaireWorker(e);
         }
 
         @Override
         public Integer visit(FAdd e) {
-            throw new NotYetImplementedException();
+            return visitOpBinaireWorker(e);
         }
 
         @Override
         public Integer visit(FSub e) {
-            throw new NotYetImplementedException();
+            return visitOpBinaireWorker(e);
         }
 
         @Override
         public Integer visit(FMul e) {
-            throw new NotYetImplementedException();
+            return visitOpBinaireWorker(e);
         }
 
         @Override
         public Integer visit(FDiv e) {
-            throw new NotYetImplementedException();
+            return visitOpBinaireWorker(e);
         }
 
         @Override
@@ -215,7 +213,7 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
         public Exp visit(Let e) {
           Exp e1 = e.getE1().accept(this);
           Exp e2 = e.getE2().accept(this);
-          return new Let(new Id(e.getId().getIdString()), e.getT(), e1 , e2);
+          return new Let(new Id(e.getId().getIdString()), Type.gen(), e1 , e2);
         }
 
         @Override
@@ -229,6 +227,18 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
            }
            FunDef nouvelleFunDef = new FunDef(new Id(funDef.getId().getIdString()), funDef.getType(), nouveauxArgs, funDef.getE().accept(this));
           return new LetRec(nouvelleFunDef, exp);
+        }
+        
+        @Override
+        public Exp visit(LetTuple e){
+           Exp e1 = e.getE1().accept(this);
+           Exp e2 = e.getE2().accept(this);
+           List<Id> nouveauxIds = new ArrayList<>();
+           for(Id id : e.getIds())
+           {
+               nouveauxIds.add(new Id(id.getIdString()));
+           }
+          return new LetTuple(nouveauxIds, e.getTs(), e1, e2);
         }
     }
 }

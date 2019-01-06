@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import util.NotYetImplementedException;
 import visiteur.ObjVisitorExp;
 
 public class KNormVisitor extends ObjVisitorExp {
@@ -27,8 +26,7 @@ public class KNormVisitor extends ObjVisitorExp {
 
     @Override
     public FloatMinCaml visit(FloatMinCaml e) {
-        throw new NotYetImplementedException();
-        //return e;
+        return e;
     }
 
     private Let visitOpUnaireWorker(OperateurUnaire e, Function<Exp, ? extends OperateurUnaire> constructeurOpUnaire)
@@ -80,6 +78,26 @@ public class KNormVisitor extends ObjVisitorExp {
     @Override
     public Let visit(LE e) {
         return visitOpBinaireWorker(e, LE::new);
+    }
+    
+    @Override
+    public Let visit(FAdd e){
+       return visitOpBinaireWorker(e, FAdd::new); 
+    }
+
+    @Override
+    public Let visit(FSub e){
+        return visitOpBinaireWorker(e, FSub::new); 
+    }
+
+    @Override
+    public Let visit(FMul e) {
+       return visitOpBinaireWorker(e, FMul::new); 
+    }
+
+    @Override
+    public Let visit(FDiv e){
+        return visitOpBinaireWorker(e, FDiv::new); 
     }
 
     private Let visitIfWorker(Exp e1, Exp e2, Exp e3, BinaryOperator<Exp> createurOpRel) {

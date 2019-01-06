@@ -3,16 +3,11 @@ package arbreasml;
 import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
-public class FNegAsml implements ExpAsml {
-    private final VarAsml e;
+public class FNegAsml extends NegBaseAsml {
     public FNegAsml(VarAsml e)
     {
-        this.e = e;
+        super(e);
     }    
-
-    public VarAsml getE() {
-        return e;
-    }
     
     @Override
     public void accept(VisiteurAsml v) {

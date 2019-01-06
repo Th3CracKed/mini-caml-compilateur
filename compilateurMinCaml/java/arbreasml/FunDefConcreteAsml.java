@@ -8,12 +8,14 @@ import visiteur.VisiteurAsml;
 
 public class FunDefConcreteAsml extends FunDefAsml {
     
-    private final AsmtAsml asmt;
+    private final AsmtAsml asmt;    
+    private final List<VarAsml> arguments;
     
     public FunDefConcreteAsml(String label, AsmtAsml asmt, List<VarAsml> arguments)
     {
-        super(label, arguments);
+        super(label);
         this.asmt = asmt;
+        this.arguments = arguments;
     }
 
     public static FunDefConcreteAsml creerMainFunDef(AsmtAsml asmt)
@@ -29,6 +31,11 @@ public class FunDefConcreteAsml extends FunDefAsml {
     public AsmtAsml getAsmt() {
         return asmt;
     }
+        
+    public List<VarAsml> getArguments() {
+        return arguments;
+    }
+    
 
     @Override
     public void accept(VisiteurAsml v) {

@@ -3,7 +3,11 @@ package arbreasml;
 import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
-public class LabelFloatAsml implements ExpAsml {
+public class IfEqFloatAsml extends IfFloatAsml {
+
+    public IfEqFloatAsml(VarAsml e1, VarAsml e2, AsmtAsml eIf, AsmtAsml eElse) {
+        super(e1, e2, eIf, eElse);
+    }
 
     @Override
     public void accept(VisiteurAsml v) {

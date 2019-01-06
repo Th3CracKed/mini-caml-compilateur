@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import util.Constantes;
 import visiteur.Visitor;
 
@@ -18,7 +19,23 @@ public class VisiteurConversionClosure implements Visitor {
     
     public HashMap<String,EnvironnementClosure> getClosures()
     {
-        return closures;
+        HashMap<String,EnvironnementClosure> closuresRenvoyes = new HashMap<>(closures);
+        Set<String> nomsClosures = closures.keySet();
+        for(String nomFonction : nomsClosures)
+        {
+            EnvironnementClosure env = closures.get(nomFonction);
+            for(String nomFonctionAppelee : env.getFonctionsAppelees())
+            {
+                if(!nomFonctionAppelee.equals(nomFonction) && closures.containsKey(nomFonctionAppelee))
+                {
+                    env.getVariablesLibres().add(nomFonctionAppelee);
+                }
+            }
+        }
+        /*closuresRenvoyes = new HashMap<>(closures);
+        closuresRenvoyes.put("_f24", new EnvironnementClosure(Arrays.asList("v21", "_f22"), Arrays.asList()));
+        closuresRenvoyes.put("_f22", new EnvironnementClosure(Arrays.asList("v21", "v20", "_f24"), Arrays.asList()));*/
+        return closuresRenvoyes;
     }
     
     @Override
@@ -38,13 +55,14 @@ public class VisiteurConversionClosure implements Visitor {
         VisiteurVariablesLibres vVarLibres = new VisiteurVariablesLibres(idStringParametres);
         eFundef.accept(vVarLibres);
         List<String> variablesLibres = new ArrayList(vVarLibres.getVariablesLibres());
+        variablesLibres.removeAll(idStringParametres);
         String idString = id.getIdString();
         VisiteurFonctionsDOrdreSuperieur vFunOrdreSup = new VisiteurFonctionsDOrdreSuperieur(idString);
         e.accept(vFunOrdreSup);
-        boolean estUneFonctionDOrdreSuperieur = vFunOrdreSup.getEstUneFonctionDOrdreSuperieur();        
+        boolean estUneFonctionDOrdreSuperieur = vFunOrdreSup.getEstUneFonctionDOrdreSuperieur();       
         if(!variablesLibres.isEmpty() || estUneFonctionDOrdreSuperieur)
         {
-            getClosures().put(idString, new EnvironnementClosure(variablesLibres));
+            closures.put(idString, new EnvironnementClosure(variablesLibres, vVarLibres.getFonctionsAppelees()));
         }
     }
     
@@ -52,11 +70,13 @@ public class VisiteurConversionClosure implements Visitor {
     {
         private final HashSet<String> variablesLibres;
         private final HashSet<String> variablesLiees;
+        private final HashSet<String> fonctionsAppelees;
         
         public VisiteurVariablesLibres(HashSet<String> variablesLiees)
         {
             variablesLibres = new HashSet<>();
             this.variablesLiees = variablesLiees; 
+            this.fonctionsAppelees = new HashSet<>();
         }
 
         public HashSet<String> getVariablesLibres()
@@ -64,11 +84,15 @@ public class VisiteurConversionClosure implements Visitor {
             return variablesLibres;
         }
         
+        public HashSet<String> getFonctionsAppelees() {
+            return fonctionsAppelees;
+        }
+        
         @Override
         public void visit(Var e)
         {
             String idString = e.getId().getIdString();
-            if(!variablesLiees.contains(idString) && !Constantes.FONCTION_EXTERNES_MINCAML.contains(idString) && !Id.estUnLabel(idString))
+            if(!variablesLiees.contains(idString) && !Constantes.FONCTION_EXTERNES_MINCAML.contains(idString) /*&& !Id.estUnLabel(idString)*/)
             {
                 variablesLibres.add(idString);
             }
@@ -101,16 +125,43 @@ public class VisiteurConversionClosure implements Visitor {
         @Override
         public void visit(LetRec e)
         {
-            FunDef funDef = e.getFd();
+            FunDef funDef = e.getFd();            
             HashSet<String> idsStringParametres = new HashSet<>();
             for(Id idParametre : funDef.getArgs())
             {
                 idsStringParametres.add(idParametre.getIdString());
             }
+            HashSet<String> anciennesVariablesLiees = new HashSet<>(variablesLiees);  
+            variablesLiees.clear();
             variablesLiees.addAll(idsStringParametres);            
             funDef.getE().accept(this);
-            variablesLiees.removeAll(idsStringParametres);
+            variablesLiees.clear();
+            variablesLiees.addAll(anciennesVariablesLiees);  
+            variablesLibres.removeAll(anciennesVariablesLiees);
+            variablesLibres.removeAll(idsStringParametres);
             e.getE().accept(this);
+        }
+        
+        @Override
+        public void visit(App e)
+        {    
+            Exp fun = e.getE();
+            if(fun instanceof Var)
+            {
+                String idString = ((Var)fun).getId().getIdString();
+                if(Id.estUnLabel(idString))
+                {
+                    fonctionsAppelees.add(idString);
+                }
+                else
+                {
+                    fun.accept(this);
+                }
+            }
+            for(Exp parametre : e.getEs())
+            {
+                parametre.accept(this);
+            }
         }
     }
 

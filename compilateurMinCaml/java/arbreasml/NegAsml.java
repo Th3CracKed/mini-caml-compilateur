@@ -3,17 +3,9 @@ package arbreasml;
 import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
-public class NegAsml implements ExpAsml {
-
-    private final VarAsml e;
-
+public class NegAsml extends NegBaseAsml {
     public NegAsml(VarAsml e) {
-        this.e = e;
-    }
-    
-    public VarAsml getE()
-    {
-        return e;
+        super(e);
     }
     
     @Override

@@ -3,9 +3,7 @@ package typage;
 import arbremincaml.*;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.nashorn.internal.codegen.CompilationException;
 import util.MyCompilationException;
-import util.NotYetImplementedException;
 
 
 public class SolveurEquationType {
@@ -55,9 +53,12 @@ public class SolveurEquationType {
             }
             Type t1Tete = teteListe.getT1();
             Type t2Tete = teteListe.getT2();
-            if(instanceOf(t1Tete, TInt.class, TBool.class, TUnit.class))
-            {                
-                if(t1Tete.getClass().isInstance(t2Tete))
+            if(instanceOf(t1Tete, TInt.class, TBool.class, TUnit.class, TFloat.class, TNombre.class))
+            {      
+                // une equation de la forme ?1 = TNombre signifie ?1 = Int ou ?2 = Float (TInt et TFloat heritent de TNombre donc (new TInt()) instanceof TNombre est
+                // vrai mais (new TNombre()) instanceof TInt()) est faux. On utilise ce type d'equation pour l'operateur inférieur ou égal qui permet de comparer
+                // 2 flottants ou 2 entiers (mais pas un entier et un flottant) : le type des operandes doit etre le meme et etre egal a TInt ou TFloat
+                if(t1Tete.getClass().isInstance(t2Tete) || t2Tete.getClass().isInstance(t1Tete)) 
                 {
                     return resoudreEquations(listeEquations, 0);
                 }
@@ -114,7 +115,7 @@ public class SolveurEquationType {
                     throw new MyCompilationException(messageMalType);
                 }
             }
-            else if(t1Tete instanceof TVar)
+            else // if(t1Tete instanceof TVar)
             {
                 TVar t1TeteTVar = (TVar)t1Tete;
                 boolean aRemplace = false;
@@ -127,17 +128,13 @@ public class SolveurEquationType {
                 {
                     listeEquations.addLast(teteListe);
                 }
-                LinkedList<EquationType> resultat = resoudreEquations(listeEquations, aRemplace?0:nbAppelsSansModifierListe+1);                
+                LinkedList<EquationType> resultat = resoudreEquations(listeEquations, (aRemplace||!contientVariable)?0:nbAppelsSansModifierListe+1);                
                 if(!contientVariable)
                 {                    
                     resultat.addFirst(teteListe);
                 }
                 return resultat;
-            }     
-            else
-            {
-                throw new NotYetImplementedException();
-            }
+            }  
         }
     }
     

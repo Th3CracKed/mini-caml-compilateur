@@ -6,11 +6,11 @@ import visiteur.VisiteurAsml;
 
 public class CallAsml extends CallBaseAsml{
 
-    private final String idString;
+    private String idString;
     
     public CallAsml(String idString, List<VarAsml> arguments) {
         super(arguments);
-        this.idString = idString;
+        setIdString(idString);
     }    
 
     public String getIdString() {
@@ -25,6 +25,10 @@ public class CallAsml extends CallBaseAsml{
     @Override
     public <E> E accept(ObjVisiteurAsml<E> v) {
         return v.visit(this);
+    }
+
+    public final void setIdString(String idString) {
+        this.idString = idString;
     }
     
 }

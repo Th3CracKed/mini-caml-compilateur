@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import util.NotYetImplementedException;
+import util.MyCompilationException;
 import visiteur.DonneesOperateurBinaire;
 import visiteur.ObjVisitor;
 import visiteur.ObjVisitorExp;
@@ -32,7 +32,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
             Object val = valeurMinCaml.getValeur();
             VisiteurEffetDeBord vEffetDeBord = new VisiteurEffetDeBord();
             e.accept(vEffetDeBord);
-            if(!vEffetDeBord.getAUnEffetDeBord() && (!(val instanceof Integer) || (Integer) val >= 0))
+            if(!vEffetDeBord.getAUnEffetDeBord() && (!(val instanceof Integer)))
             {
                 return valeurMinCaml;
             }
@@ -75,6 +75,31 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
         return creerNoeudResultat(e, e);
     }
 
+    @Override
+    public Exp visit(FNeg e){
+      return creerNoeudResultat(e, e);
+    }
+
+    @Override
+    public Exp visit(FAdd e){
+       return creerNoeudResultat(e, e);
+    }
+
+    @Override
+    public Exp visit(FSub e){
+        return creerNoeudResultat(e, e);
+    }
+
+    @Override
+    public Exp visit(FMul e) {
+       return creerNoeudResultat(e, e);
+    }
+
+    @Override
+    public Exp visit(FDiv e){
+        return creerNoeudResultat(e, e);
+    }
+    
     /*private Exp creerNoeudResultat(Valeur valeur)
     {
         Object val = valeur.getValeur();
@@ -212,10 +237,19 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
         return e;
     }
 
+    private void verifierValeurIndice(Valeur valeur)
+    {
+        if(valeur instanceof Int && ((Int)valeur).getValeur() < 0)
+        {
+            throw new MyCompilationException("Les indices de tableaux doivent être positifs ou nuls");
+        }
+    }
+    
     @Override
     public Exp visit(Get e) {
         Exp e2 = e.getE2();
         Valeur valeurE2 = e2.accept(new VisiteurCalculValeur());
+        verifierValeurIndice(valeurE2);
         return new Get(e.getE1(), (valeurE2 == null) ? e2 : valeurE2);
     }
 
@@ -223,6 +257,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
     public Exp visit(Put e) {
         Exp e2 = e.getE2();
         Valeur valeurE2 = e2.accept(new VisiteurCalculValeur());
+        verifierValeurIndice(valeurE2);
         return new Put(e.getE1(), (valeurE2 == null) ? e2 : valeurE2, e.getE3());
     }
 
@@ -270,20 +305,28 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
             valeurInteger *= -1;
             return new Int(valeurInteger);
         }
-
-        private Valeur visitOpArithmetiqueIntWorker(OperateurArithmetiqueInt e, BinaryOperator<Integer> operateur) {
+        
+        private <T, U> Valeur visitOpBinaireWorker(OperateurBinaire e, BiFunction<U, U, T> operateur, Function<T,Valeur> constructeur) {
             DonneesOperateurBinaire<Valeur> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
-            Valeur valeur1 = donneesOpBinaire.getE1();
-            Valeur valeur2 = donneesOpBinaire.getE2();
+            Valeur<U> valeur1 = (Valeur<U>)donneesOpBinaire.getE1();
+            Valeur<U> valeur2 = (Valeur<U>)donneesOpBinaire.getE2();
             if (valeur1 == null || valeur2 == null) {
                 return null;
             }
-            return new Int(operateur.apply((Integer) valeur1.getValeur(), (Integer) valeur2.getValeur()));
+            return constructeur.apply(operateur.apply(valeur1.getValeur(), valeur2.getValeur()));
+        }
+        
+        private Valeur visitOpArithmetiqueIntWorker(OperateurArithmetiqueInt e, BinaryOperator<Integer> operateur) {
+            return visitOpBinaireWorker(e, operateur, Int::new);
         }
 
+        private Valeur visitOpArithmetiqueFloatWorker(OperateurArithmetiqueFloat e, BinaryOperator<Float> operateur) {
+            return visitOpBinaireWorker(e, operateur, FloatMinCaml::new);
+        }
+        
         @Override
         public Valeur visit(Add e) {
-            return visitOpArithmetiqueIntWorker(e, (a, b) -> (a + b));
+            return visitOpArithmetiqueIntWorker(e, (a, b) ->(a + b));
         }
 
         @Override
@@ -293,37 +336,37 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
 
         @Override
         public Valeur visit(FNeg e) {
-            throw new NotYetImplementedException();
+            Valeur valeur = e.getE().accept(this);
+            if (valeur == null) {
+                return null;
+            }
+            Float valeurFloat = (Float) valeur.getValeur();
+            valeurFloat *= -1;
+            return new FloatMinCaml(valeurFloat);
         }
 
         @Override
         public Valeur visit(FAdd e) {
-            throw new NotYetImplementedException();
+            return visitOpArithmetiqueFloatWorker(e, (a, b) -> (a + b));
         }
 
         @Override
         public Valeur visit(FSub e) {
-            throw new NotYetImplementedException();
+            return visitOpArithmetiqueFloatWorker(e, (a, b) -> (a - b));
         }
 
         @Override
         public Valeur visit(FMul e) {
-            throw new NotYetImplementedException();
+            return visitOpArithmetiqueFloatWorker(e, (a, b) -> (a * b));
         }
 
         @Override
         public Valeur visit(FDiv e) {
-            throw new NotYetImplementedException();
+            return visitOpArithmetiqueFloatWorker(e, (a, b) -> (a / b));
         }
 
-        private Valeur visitOpRelationnelWorker(OperateurRelationnel e, BiFunction<Object, Object, Boolean> operateur) {
-            DonneesOperateurBinaire<Valeur> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
-            Valeur valeur1 = donneesOpBinaire.getE1();
-            Valeur valeur2 = donneesOpBinaire.getE2();
-            if (valeur1 == null || valeur2 == null) {
-                return null;
-            }
-            return new Bool(operateur.apply(valeur1.getValeur(), valeur2.getValeur()));
+        private Valeur visitOpRelationnelWorker(OperateurRelationnel e, BiFunction operateur) {
+            return visitOpBinaireWorker(e, operateur, Bool::new);
         }
 
         @Override
@@ -422,7 +465,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
 
         @Override
         public Valeur visit(FloatMinCaml e) {
-            throw new NotYetImplementedException();
+            return e;
         }
 
         @Override

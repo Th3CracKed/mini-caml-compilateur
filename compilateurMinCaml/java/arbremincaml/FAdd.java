@@ -3,7 +3,7 @@ package arbremincaml;
 import visiteur.ObjVisitor;
 import visiteur.Visitor;
 
-public class FAdd extends OperateurBinaire {
+public class FAdd extends OperateurArithmetiqueFloat {
     public FAdd(Exp e1, Exp e2) {
         super(e1,e2);
     }

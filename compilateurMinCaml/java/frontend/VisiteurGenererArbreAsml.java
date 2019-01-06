@@ -5,25 +5,40 @@ import arbreasml.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiFunction;
 import util.*;
 import visiteur.*;
 
 public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
-
-    private final List<FunDefAsml> funDefs;
-    
-    private final HashMap<String,String> funCamlVersAsml;
+    private final LinkedList<FunDefAsml> funDefs;
     private final HashMap<String,EnvironnementClosure> closures;
+    private final HashSet<String> tVarFloats;
+    private final HashSet<String> idStringVarFloats;
     
-    public VisiteurGenererArbreAsml(HashMap<String,EnvironnementClosure> closures)
-    {
-        funDefs = new ArrayList<>();
-        funCamlVersAsml = new HashMap<>();
-        funCamlVersAsml.put(Constantes.PRINT_INT_CAML, Constantes.PRINT_INT_ASML);
-        funCamlVersAsml.put(Constantes.PRINT_NEWLINE_CAML, Constantes.PRINT_NEWLINE_ASML);
-        this.closures = closures;
+    private static final HashMap<String,String> FONCTIONS_CAML_VERS_ASML = new HashMap<>();
+    static
+    {        
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.PRINT_INT_CAML, Constantes.PRINT_INT_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.PRINT_NEWLINE_CAML, Constantes.PRINT_NEWLINE_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.SIN_CAML, Constantes.SIN_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.COS_CAML, Constantes.COS_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.SQRT_CAML, Constantes.SQRT_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.ABS_FLOAT_CAML, Constantes.ABS_FLOAT_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.INT_OF_FLOAT_CAML, Constantes.INT_OF_FLOAT_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.FLOAT_OF_INT_CAML, Constantes.FLOAT_OF_INT_ASML);
+        FONCTIONS_CAML_VERS_ASML.put(Constantes.TRUNCATE_CAML, Constantes.TRUNCATE_ASML);
     }
+    
+    public VisiteurGenererArbreAsml(HashMap<String,EnvironnementClosure> closures, HashSet<String> tVarFloats)
+    {
+        funDefs = new LinkedList<>();
+        this.closures = closures;       
+        this.tVarFloats = tVarFloats;
+        this.idStringVarFloats = new HashSet<>();
+    } 
     
     public List<FunDefAsml> getFunDefs()
     {
@@ -47,7 +62,10 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
 
     @Override
     public NoeudAsml visit(FloatMinCaml e) {
-        throw new NotYetImplementedException();
+        String labelFloat = Id.genLabelFloat();
+        funDefs.addFirst(new LetFloatAsml(labelFloat, e.getValeur())); // on utilise addFirst pour les float et addLast pour les définitions de fonctions pour les faire apparaitre dans cet ordre dans le code asml
+        String idStringVar = Id.genIdString();
+        return new LetAsml(idStringVar, new VarAsml(labelFloat), new MemLectureAsml(new VarAsml(idStringVar), new IntAsml(0)));
     }
     
     private VarAsml visitOpUnaireWorker(OperateurUnaire e)
@@ -98,56 +116,79 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
 
     @Override
     public NoeudAsml visit(FNeg e) {
-        throw new NotYetImplementedException();
+        return new FNegAsml(visitOpUnaireWorker(e));
     }
 
+    private NoeudAsml visitOperateurArithmetiqueFloatWorker(OperateurArithmetiqueFloat e, BiFunction<VarAsml,VarAsml,NoeudAsml> constructeur)
+    {
+        VarAsml e1 = (VarAsml)e.getE1().accept(this);
+        VarAsml e2 = (VarAsml)e.getE2().accept(this);
+        return constructeur.apply(e1, e2);
+    }
+    
     @Override
     public NoeudAsml visit(FAdd e) {
-        throw new NotYetImplementedException();
+        return visitOperateurArithmetiqueFloatWorker(e, FAddAsml::new);
     }
 
     @Override
     public NoeudAsml visit(FSub e) {
-        throw new NotYetImplementedException();
+        return visitOperateurArithmetiqueFloatWorker(e, FSubAsml::new);
     }
 
     @Override
     public NoeudAsml visit(FMul e) {
-        throw new NotYetImplementedException();
+        return visitOperateurArithmetiqueFloatWorker(e, FMulAsml::new);
     }
 
     @Override
     public NoeudAsml visit(FDiv e) {
-        throw new NotYetImplementedException();
+        return visitOperateurArithmetiqueFloatWorker(e, FDivAsml::new);
     }
 
+    private NoeudAsml visitOperateurRelationnelWorker(OperateurRelationnel e)
+    {
+        If noeudIf = new If(e, new Bool(true), new Bool(false));
+        return noeudIf.accept(this);
+    }
+    
     @Override
     public NoeudAsml visit(Eq e) {
-        DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = recupererDonneesOperateurCommutatif(e);
-        return new IfEqIntAsml((VarAsml)donneesOpBinaire.getE1(), (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
+        return visitOperateurRelationnelWorker(e);
+        /*DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = recupererDonneesOperateurCommutatif(e);
+        VarAsml e1 = (VarAsml)donneesOpBinaire.getE1();
+        if(idStringVarFloats.contains(e1.getIdString()))
+        {
+            return new IfEqFloatAsml(e1, (VarAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
+        }
+        else
+        {
+            return new IfEqIntAsml(e1, (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
+        }*/
     }
 
     @Override
     public NoeudAsml visit(LE e) {
-        DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
-        if(donneesOpBinaire.getE1() instanceof IntAsml)
-        {            
-            /*String idString = Id.genIdString();
-            VarAsml var = new VarAsml(idString);
-            IfLEIntAsml ifLE = new IfLEIntAsml(var, (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-            return new LetAsml(idString, (IntAsml)donneesOpBinaire.getE1(), ifLE);*/
+        return visitOperateurRelationnelWorker(e);
+        /*DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
+        VarAsml e1 = (VarAsml)donneesOpBinaire.getE1();
+         if(idStringVarFloats.contains(e1.getIdString()))
+        {
+            return new IfLEFloatAsml(e1, (VarAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
+        }
+        else if(donneesOpBinaire.getE1() instanceof IntAsml)
+        {   
             return new IfGEIntAsml((VarAsml)donneesOpBinaire.getE2(), (VarOuIntAsml)donneesOpBinaire.getE1(), IntAsml.vrai(), IntAsml.faux());
         }
         else
         {
             return new IfLEIntAsml((VarAsml)donneesOpBinaire.getE1(), (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-        }
+        }*/
     }
 
     @Override
     public NoeudAsml visit(If e) {
         Exp e1 = e.getE1();
-        NoeudAsml e1Accepte = e.getE1().accept(this);
         AsmtAsml e2Accepte = (AsmtAsml)e.getE2().accept(this);
         AsmtAsml e3Accepte = (AsmtAsml)e.getE3().accept(this);
         if(e1 instanceof OperateurRelationnel)
@@ -163,24 +204,39 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
                 droiteOpRel = temp;
                 aPermute = true;
             }
-            if (e1 instanceof Eq) {   
-                return new IfEqIntAsml((VarAsml)gaucheOpRel, droiteOpRel, e2Accepte, e3Accepte);
-            }
-            else // if(e1 instanceof LE)
+            VarAsml gaucheOpRelVar = (VarAsml)gaucheOpRel;
+            if(idStringVarFloats.contains(gaucheOpRelVar.getIdString()))
             {
-                if(aPermute)
-                {
-                    return new IfGEIntAsml((VarAsml)gaucheOpRel, droiteOpRel, e2Accepte, e3Accepte);
+                VarAsml droiteOpRelVar = (VarAsml)droiteOpRel;
+                if (e1 instanceof Eq) {                    
+                    return new IfEqFloatAsml(gaucheOpRelVar, droiteOpRelVar, IntAsml.vrai(), IntAsml.faux());
                 }
-                else
+                else // if(e1 instanceof LE)
                 {
-                    return new IfLEIntAsml((VarAsml)gaucheOpRel, droiteOpRel, e2Accepte, e3Accepte);
+                    return new IfLEFloatAsml(gaucheOpRelVar, droiteOpRelVar, IntAsml.vrai(), IntAsml.faux());
+                }
+            }
+            else
+            {                
+                if (e1 instanceof Eq) {
+                    return new IfEqIntAsml(gaucheOpRelVar, droiteOpRel, e2Accepte, e3Accepte);
+                }
+                else // if(e1 instanceof LE)
+                {
+                    if(aPermute)
+                    {
+                        return new IfGEIntAsml(gaucheOpRelVar, droiteOpRel, e2Accepte, e3Accepte);
+                    }
+                    else
+                    {
+                        return new IfLEIntAsml(gaucheOpRelVar, droiteOpRel, e2Accepte, e3Accepte);
+                    }
                 }
             }
         }        
         else //if(e1 instanceof Var)
         {
-            return new IfEqIntAsml((VarAsml)e1Accepte, IntAsml.vrai(), e2Accepte, e3Accepte);
+            return new IfEqIntAsml((VarAsml)e.getE1().accept(this), IntAsml.vrai(), e2Accepte, e3Accepte);
         }
         /*else  // (e1 instanceof Bool)
         {
@@ -203,6 +259,10 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     @Override
     public NoeudAsml visit(Let e) {
         String idString = e.getId().getIdString();
+        if(tVarFloats.contains(((TVar)e.getT()).getV()))
+        {
+            idStringVarFloats.add(idString);
+        }
         Exp e1 = e.getE1();
         AsmtAsml e2Accepte = (AsmtAsml)e.getE2().accept(this);
         if(e1 instanceof Sub)
@@ -239,15 +299,22 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
             }
             return new LetAsml(idString, new NewAsml(new IntAsml(esSize*Constantes.TAILLE_MOT_MEMOIRE)), resultat);
         }
-        NoeudAsml e1Accepte = e.getE1().accept(this);   
+        else if(e1 instanceof FloatMinCaml)
+        {
+            String labelFloat = Id.genLabelFloat();
+            funDefs.addFirst(new LetFloatAsml(labelFloat, ((FloatMinCaml)e1).getValeur())); // on utilise addFirst pour les float et addLast pour les définitions de fonctions pour les faire apparaitre dans cet ordre dans le code asml
+            String idStringVar = Id.genIdString();
+            return new LetAsml(idStringVar, new VarAsml(labelFloat), new LetAsml(idString, new MemLectureAsml(new VarAsml(idStringVar), new IntAsml(0)), e2Accepte));
+        }  
+        NoeudAsml e1Accepte = e1.accept(this);   
         if(e1Accepte instanceof LetAsml)
         {
             LetAsml e1AccepteLet = (LetAsml)e1Accepte;
             return new LetAsml(e1AccepteLet.getIdString(), e1AccepteLet.getE1(), new LetAsml(idString, (ExpAsml)e1AccepteLet.getE2(), e2Accepte));
         }
         else
-        {            
-            return new LetAsml(idString, (ExpAsml)e1Accepte, e2Accepte);
+        {
+            return new LetAsml(idString, (ExpAsml)e1Accepte, e2Accepte); // ! estUnLabelFloat et estUnLabelDeFonction
         }
     }
 
@@ -259,8 +326,7 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     @Override
     public NoeudAsml visit(LetRec e) {    
         FunDef funDef = e.getFd();
-        Exp exp = e.getE();
-        
+        Exp exp = e.getE();        
         Exp eFunDef = funDef.getE();
         String idString = funDef.getId().getIdString();
         EnvironnementClosure envClosure = closures.get(idString);
@@ -281,56 +347,64 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
             eFunDef.accept(new VisiteurRenommage(idString, Constantes.SELF_ASML));
             VarAsml varClosure = new VarAsml(Id.genIdString());
             String idStringVarClosure = varClosure.getIdString();
+            //eFunDef.accept(new VisiteurRenommageCorpsFonctionsImbriquees(idString, idStringVarClosure));
             exp.accept(new VisiteurRenommage(idString, idStringVarClosure));
-            expAccepte = (AsmtAsml)exp.accept(this);
+            expAccepte = (AsmtAsml)exp.accept(this);            
+            expAccepte.accept(new VisiteurRenommageAsml(idString, idStringVarClosure));
             eFunDefAccepte = (AsmtAsml)eFunDef.accept(this);
             List<String> env = envClosure.getVariablesLibres();
             int envSize = env.size();
             for(int i = 0 ; i < envSize ; i++)
             {
-                expAccepte = new LetAsml(Id.genIdString(), new MemEcritureAsml(new VarAsml(idStringVarClosure), new IntAsml(i+1), new VarAsml(env.get(i))), expAccepte);
-                eFunDefAccepte = new LetAsml(env.get(i), new MemLectureAsml(new VarAsml(Constantes.SELF_ASML), new IntAsml(i+1)), eFunDefAccepte);
+                boolean estUnLabel = false;
+                String nomVarLibreEFunDef = null;
+                String nomVarIntermediaire = null;
+                nomVarLibreEFunDef = Id.genIdString();
+                eFunDefAccepte.accept(new VisiteurRenommageAsml(env.get(i), nomVarLibreEFunDef));
+                if(Id.estUnLabel(env.get(i)))
+                {
+                    //expAccepte.accept(new VisiteurRenommageAsml(env.get(i), idStringVarClosure));
+                    nomVarIntermediaire = Id.genIdString();
+                    estUnLabel = true;
+                }
+                else
+                {
+                    nomVarIntermediaire = env.get(i);
+                    //estUnLabel = false;
+                }
+                expAccepte = new LetAsml(Id.genIdString(), new MemEcritureAsml(new VarAsml(idStringVarClosure), new IntAsml(i+1), new VarAsml(nomVarIntermediaire)), expAccepte);
+                if(estUnLabel)
+                {
+                    expAccepte = new LetAsml(nomVarIntermediaire, new VarAsml(env.get(i)), expAccepte);
+                } 
+                /*if(estUnLabel)
+                {                    
+                    expAccepte = new LetAsml(nomVarLibreExp, new VarAsml(env.get(i)), expAccepte);
+                }*/
+                eFunDefAccepte = new LetAsml(nomVarLibreEFunDef, new MemLectureAsml(new VarAsml(Constantes.SELF_ASML), new IntAsml(i+1)), eFunDefAccepte);
+                if(estUnLabel)
+                {
+                    System.out.println(env.get(i)+" RENOMME EN "+nomVarLibreEFunDef+"dans "+idString);
+                    eFunDefAccepte = (AsmtAsml)eFunDefAccepte.accept(new VisiteurRenommageCallAsml(env.get(i), nomVarLibreEFunDef)); // dans chaque fonction de nom f renommer f en %self partout ou f apparait ailleurs que comme premier element d'un call
+                } 
             }
             String idVarAdresseFun = Id.genIdString();
             expAccepte = new LetAsml(Id.genIdString(), new MemEcritureAsml(new VarAsml(idStringVarClosure), new IntAsml(0), new VarAsml(idVarAdresseFun)), expAccepte);
-            expAccepte = new LetAsml(idVarAdresseFun, new VarAsml(idString), expAccepte); 
-            expAccepte = new LetAsml(idStringVarClosure, new NewAsml(new IntAsml(Constantes.TAILLE_MOT_MEMOIRE*(envSize+1))), expAccepte);               
-            funDefs.add(new FunDefConcreteAsml(idString, eFunDefAccepte, args));
-            return expAccepte;
+            expAccepte = new LetAsml(idVarAdresseFun, new VarAsml(idString), expAccepte);            
+            expAccepte = new LetAsml(idStringVarClosure, new NewAsml(new IntAsml(Constantes.TAILLE_MOT_MEMOIRE*(envSize+1))), expAccepte);     
+            eFunDefAccepte.accept(new VisiteurRenommageAsml(idString, Constantes.SELF_ASML));
         }        
-        funDefs.add(new FunDefConcreteAsml(idString, eFunDefAccepte, args));
+        funDefs.addLast(new FunDefConcreteAsml(idString, eFunDefAccepte, args));  // on utilise addFirst pour les float et addLast pour les définitions de fonctions pour les faire apparaitre dans cet ordre dans le code asml
         return expAccepte;
-    }
-    
-    private class VisiteurRenommage implements Visitor
-    {
-        private final String ancienNom;
-        private final String nouveauNom;
-        
-        public VisiteurRenommage(String ancienNom, String nouveauNom)
-        {
-            this.ancienNom = ancienNom;
-            this.nouveauNom = nouveauNom;
-        }
-        
-        @Override
-        public void visit(Var e)
-        {
-            Id id = e.getId();
-            if(id.getIdString().equals(ancienNom))
-            {
-                id.setIdString(nouveauNom);
-            }
-        }
     }
 
     @Override
     public NoeudAsml visit(App e) {
         List<VarAsml> arguments = new ArrayList<>();     
         VarAsml varFonction = (VarAsml)e.getE().accept(this);
-        String nomFonction = varFonction.getIdString();
+        String nomFonction = varFonction.getIdString();        
         NoeudAsml resultat = null;
-        String nomFonctionTraduiteAsml = funCamlVersAsml.get(nomFonction);
+        String nomFonctionTraduiteAsml = FONCTIONS_CAML_VERS_ASML.get(nomFonction);
         if(nomFonctionTraduiteAsml != null || Id.estUnLabel(nomFonction))
         {
             if(nomFonctionTraduiteAsml != null)
@@ -391,8 +465,10 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     }
 
     @Override
-    public NoeudAsml visit(Array e) {
-        return new CallAsml(Constantes.CREATE_ARRAY_ASML, Arrays.asList((VarAsml)e.getE1().accept(this), (VarAsml)e.getE2().accept(this)));
+    public NoeudAsml visit(Array e) {        
+        VarAsml e2 = (VarAsml)e.getE2().accept(this);
+        String nomFonction = (idStringVarFloats.contains(e2.getIdString()))?Constantes.CREATE_FLOAT_ARRAY_ASML:Constantes.CREATE_ARRAY_ASML;
+        return new CallAsml(nomFonction, Arrays.asList((VarAsml)e.getE1().accept(this), e2));
     }
 
     @Override
@@ -403,6 +479,259 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     @Override
     public NoeudAsml visit(Put e) {
         return new MemEcritureAsml((VarAsml)e.getE1().accept(this), (VarOuIntAsml)e.getE2().accept(this), (VarAsml)e.getE3().accept(this));
+    }    
+    
+    private class VisiteurRenommage implements Visitor
+    {
+        private final String ancienNom;
+        private final String nouveauNom;
+        
+        public VisiteurRenommage(String ancienNom, String nouveauNom)
+        {
+            this.ancienNom = ancienNom;
+            this.nouveauNom = nouveauNom;
+        }
+        
+        @Override
+        public void visit(LetRec e)
+        {
+            e.getE().accept(this);
+        }
+        
+        @Override
+        public void visit(Var e)
+        {
+            Id id = e.getId();
+            if(id.getIdString().equals(ancienNom))
+            {
+                id.setIdString(nouveauNom);
+            }
+        }
     }
     
+    /*private class VisiteurRenommageCorpsFonctionsImbriquees extends VisiteurRenommage
+    {        
+        private boolean renommageActive;
+        
+        public VisiteurRenommageCorpsFonctionsImbriquees(String ancienNom, String nouveauNom)
+        {
+            super(ancienNom, nouveauNom);
+            setRenommageActive(false);
+        }    
+        
+        private void setRenommageActive(boolean renommageActive) {
+            this.renommageActive = renommageActive;
+        }
+        
+        @Override
+        public void visit(LetRec e)
+        {
+            boolean ancienRenommageActive = renommageActive;
+            setRenommageActive(true);
+            e.getFd().getE().accept(this);
+            setRenommageActive(ancienRenommageActive);
+            e.getE().accept(this);
+        }
+        
+        @Override
+        public void visit(Var e)
+        {
+            if(renommageActive)
+            {
+                super.visit(e);
+            }
+        }
+    }*/
+    
+    private class VisiteurRenommageAsml implements VisiteurAsml
+    {
+        private final String ancienNom;
+        private final String nouveauNom;
+        
+        public VisiteurRenommageAsml(String ancienNom, String nouveauNom)
+        {
+            this.ancienNom = ancienNom;
+            this.nouveauNom = nouveauNom;
+        }
+        
+        @Override
+        public void visit(VarAsml e)
+        {
+            if((e.getIdString().equals(getAncienNom())))
+            {
+                e.setIdString(getNouveauNom());
+            }
+        }
+        
+        public String getAncienNom() {
+            return ancienNom;
+        }
+        
+        public String getNouveauNom() {
+            return nouveauNom;
+        }
+    }
+    
+    private class VisiteurRenommageCallAsml implements ObjVisiteurAsml<NoeudAsml>
+    {
+        private final String ancienNom;
+        private final String nouveauNom;
+        
+        public VisiteurRenommageCallAsml(String ancienNom, String nouveauNom)
+        {
+            this.ancienNom = ancienNom;
+            this.nouveauNom = nouveauNom;
+        }
+        
+        @Override
+        public NoeudAsml visit(CallAsml e)
+        {
+            if(e.getIdString().equals(ancienNom))
+            {
+                return new CallClosureAsml(new VarAsml(nouveauNom), e.getArguments());
+            }
+            else
+            {
+                return e;
+            }
+        }
+
+        @Override
+        public NoeudAsml visit(AddAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(FunDefConcreteAsml e) {
+            AsmtAsml asmt = (AsmtAsml)e.getAsmt().accept(this);
+            return new FunDefConcreteAsml(e.getLabel(), asmt, e.getArguments());
+        }
+
+        @Override
+        public NoeudAsml visit(IntAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(LetAsml e) {
+            ExpAsml e1 = (ExpAsml)e.getE1().accept(this);
+            AsmtAsml e2 = (AsmtAsml)e.getE2().accept(this);
+            return new LetAsml(e.getIdString(), e1, e2);
+        }
+
+        @Override
+        public NoeudAsml visit(NegAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(NopAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(ProgrammeAsml e) {
+            List<FunDefAsml> fundefs = new ArrayList<>();
+            for(FunDefAsml funDef : e.getFunDefs())
+            {
+                fundefs.add((FunDefAsml)funDef.accept(this));
+            }
+            return new ProgrammeAsml((FunDefConcreteAsml)e.getMainFunDef().accept(this), fundefs);
+        }
+
+        @Override
+        public NoeudAsml visit(SubAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(VarAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(NewAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(FNegAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(FAddAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(FSubAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(FMulAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(FDivAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(CallClosureAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(MemLectureAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(MemEcritureAsml e) {
+            return e;
+        }
+
+        @Override
+        public NoeudAsml visit(LetFloatAsml e) {
+            return e;
+        }
+        
+        private NoeudAsml visitIfIntWorker(IfIntAsml e, ConstructeurIfInt constructeurIf)
+        {
+            return constructeurIf.creerIf(e.getE1(), e.getE2(), (AsmtAsml)e.getESiVrai().accept(this), (AsmtAsml)e.getESiFaux().accept(this));
+        }
+        
+        @Override
+        public NoeudAsml visit(IfEqIntAsml e) {
+            return visitIfIntWorker(e, IfEqIntAsml::new);
+        }
+
+        @Override
+        public NoeudAsml visit(IfLEIntAsml e) {
+            return visitIfIntWorker(e, IfLEIntAsml::new);
+        }
+
+        @Override
+        public NoeudAsml visit(IfGEIntAsml e) {
+            return visitIfIntWorker(e, IfGEIntAsml::new);
+        }
+
+        private NoeudAsml visitIfFloatWorker(IfFloatAsml e, ConstructeurIfFloat constructeurIf)
+        {
+            return constructeurIf.creerIf(e.getE1(), e.getE2(), (AsmtAsml)e.getESiVrai().accept(this), (AsmtAsml)e.getESiFaux().accept(this));
+        }
+        
+        @Override
+        public NoeudAsml visit(IfEqFloatAsml e) {
+            return visitIfFloatWorker(e, IfEqFloatAsml::new);
+        }
+
+        @Override
+        public NoeudAsml visit(IfLEFloatAsml e) {
+            return visitIfFloatWorker(e, IfLEFloatAsml::new);
+        }
+    }
 }

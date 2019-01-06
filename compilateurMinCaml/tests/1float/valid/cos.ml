@@ -1,0 +1,1 @@
+let x = print_int(int_of_float (10.0*.(cos 1.04))) in ()

@@ -1,0 +1,1 @@
+let x = print_int(int_of_float (sqrt 122.1)) in ()

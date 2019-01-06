@@ -1,5 +1,5 @@
 package arbremincaml;
 
-public class TFloat extends Type {
+public class TFloat extends TNombre {
     
 }

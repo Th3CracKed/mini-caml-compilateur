@@ -18,7 +18,7 @@ public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
         e.getE1().accept(visEffetDeBord);
         if (visVarUtilisees.getVariablesUtilisees().contains(id.getIdString()) || visEffetDeBord.getAUnEffetDeBord()) {
             Exp e1 = e.getE1().accept(this);
-            return new Let(id, e.getT(), e1, e2);
+            return new Let(id, Type.gen(), e1, e2);
         } else {
             return e2;
         }

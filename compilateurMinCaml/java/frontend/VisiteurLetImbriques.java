@@ -9,27 +9,27 @@ import visiteur.ObjVisitorExp;
 
 public class VisiteurLetImbriques extends ObjVisitorExp {
     
-    private static Exp insererLet(Id id, Type t, Exp e1, Exp e2)
+    private static Exp insererLet(Id id, Exp e1, Exp e2)
     {
         if(e1 instanceof Let)
         {
             Let e1Let = (Let)e1;
-            return new Let(e1Let.getId(), e1Let.getT(), e1Let.getE1(), insererLet(id, t, e1Let.getE2(), e2));
+            return new Let(e1Let.getId(), Type.gen(), e1Let.getE1(), insererLet(id, e1Let.getE2(), e2));
         }
         else if(e1 instanceof LetRec)
         {
             LetRec e1LetRec = (LetRec)e1;
             FunDef funDef = e1LetRec.getFd();
-            return new LetRec(new FunDef(funDef.getId(), funDef.getType(), funDef.getArgs(), funDef.getE()), insererLet(id, t, e1LetRec.getE(), e2));
+            return new LetRec(new FunDef(funDef.getId(), funDef.getType(), funDef.getArgs(), funDef.getE()), insererLet(id, e1LetRec.getE(), e2));
         }
         else if(e1 instanceof LetTuple)
         {
             LetTuple e1LetTuple = (LetTuple)e1;
-            return new LetTuple(e1LetTuple.getIds(), e1LetTuple.getTs(), e1LetTuple.getE1(), insererLet(id, t, e1LetTuple.getE2(), e2));
+            return new LetTuple(e1LetTuple.getIds(), e1LetTuple.getTs(), e1LetTuple.getE1(), insererLet(id, e1LetTuple.getE2(), e2));
         }
         else
         {
-            return new Let(id, t, e1, e2);
+            return new Let(id, Type.gen(), e1, e2);
         }
     }
     
@@ -85,7 +85,7 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
     public Exp visit(Let e) {
         Exp e1 = e.getE1().accept(this);
         Exp e2 = e.getE2().accept(this);
-        return insererLet(e.getId(), e.getT(), e1, e2); 
+        return insererLet(e.getId(), e1, e2); 
     }
     
     /*@Override

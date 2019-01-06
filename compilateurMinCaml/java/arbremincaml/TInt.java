@@ -1,5 +1,5 @@
 package arbremincaml;
 
-public class TInt extends Type {
+public class TInt extends TNombre {
     
 }

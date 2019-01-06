@@ -1,6 +1,7 @@
 package arbreasml;
 
 import java.util.ArrayList;
+import util.MyCompilationException;
 import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
@@ -8,7 +9,7 @@ public class LetFloatAsml extends FunDefAsml {
     private final float valeur;
     
     public LetFloatAsml(String label, float valeur) {
-        super(label, new ArrayList<>());
+        super(label);
         this.valeur = valeur;
     }
 

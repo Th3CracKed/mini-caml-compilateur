@@ -1,0 +1,1 @@
+let x = print_int(int_of_float (float_of_int 11+.1.6)) in ()

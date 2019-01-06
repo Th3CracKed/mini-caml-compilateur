@@ -26,7 +26,7 @@ public class VisiteurBetaReduction extends ObjVisitorExp {
       }
       Exp e2 = e.getE2().accept(this);
       valeursVariable.put(idString, ancienRenommage);
-      return new Let(id, e.getT(), e1 , e2);
+      return new Let(id, Type.gen(), e1 , e2);
     }
     
     @Override

@@ -1,7 +1,6 @@
 package visiteur;
 
 import arbremincaml.*;
-import util.NotYetImplementedException;
 
 public interface Visitor {
 
@@ -15,7 +14,7 @@ public interface Visitor {
     }
 
     default void visit(FloatMinCaml e) { 
-        throw new NotYetImplementedException();
+        
     }    
     
     default void visit(Not e) {
@@ -36,23 +35,23 @@ public interface Visitor {
     }
 
     default void visit(FNeg e){
-      throw new NotYetImplementedException();
+        UtilVisiteur.visitOpUnaireWorker(e, this);
     }
 
     default void visit(FAdd e){
-       throw new NotYetImplementedException();
+        UtilVisiteur.visitOpBinaireWorker(e, this);
     }
 
     default void visit(FSub e){
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitOpBinaireWorker(e, this);
     }
 
     default void visit(FMul e) {
-       throw new NotYetImplementedException();
+       UtilVisiteur.visitOpBinaireWorker(e, this);
     }
 
     default void visit(FDiv e){
-        throw new NotYetImplementedException();
+        UtilVisiteur.visitOpBinaireWorker(e, this);
     }
 
     default void visit(Eq e){

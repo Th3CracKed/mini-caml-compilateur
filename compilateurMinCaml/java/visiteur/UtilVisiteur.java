@@ -1,14 +1,7 @@
 package visiteur;
 
-import arbreasml.CallBaseAsml;
-import arbreasml.IfIntAsml;
-import arbreasml.MemAsml;
-import arbremincaml.OperateurBinaire;
-import arbremincaml.OperateurUnaire;
-import arbreasml.NegAsml;
-import arbreasml.OperateurArithmetiqueIntAsml;
-import arbreasml.VarAsml;
-import arbremincaml.AccesTableau;
+import arbreasml.*;
+import arbremincaml.*;
 
 public class UtilVisiteur {
 
@@ -31,17 +24,43 @@ public class UtilVisiteur {
         e.getIndice().accept(visiteur);
     }
 
-    public static void visitOpArithmetiqueIntWorker(OperateurArithmetiqueIntAsml e, VisiteurAsml visiteur) {
+    public static void visitOpArithmetiqueWorker(OperateurArithmetiqueAsml e, VisiteurAsml visiteur) {
         e.getE1().accept(visiteur);
+    }
+    
+    public static void visitOpArithmetiqueIntWorker(OperateurArithmetiqueIntAsml e, VisiteurAsml visiteur) {
+        visitOpArithmetiqueWorker(e, visiteur);
         e.getE2().accept(visiteur);
+    }
+    
+    public static void visitOpArithmetiqueFloatWorker(OperateurArithmetiqueFloatAsml e, VisiteurAsml visiteur) {
+        visitOpArithmetiqueWorker(e, visiteur);
+        e.getE2().accept(visiteur);
+    }
+    
+    public static void visitDebutIfWorker(IfAsml e, VisiteurAsml visiteur)
+    {
+        e.getE1().accept(visiteur);
+    }
+    
+    public static void visitFinIfWorker(IfAsml e, VisiteurAsml visiteur)
+    {
+        e.getESiVrai().accept(visiteur);
+        e.getESiFaux().accept(visiteur);
     }
     
     public static void visitIfIntWorker(IfIntAsml e, VisiteurAsml visiteur)
     {
-        e.getE1().accept(visiteur);
+        visitDebutIfWorker(e, visiteur);
         e.getE2().accept(visiteur);
-        e.getESiVrai().accept(visiteur);
-        e.getESiFaux().accept(visiteur);
+        visitFinIfWorker(e, visiteur);
+    }
+    
+    public static void visitIfFloatWorker(IfFloatAsml e, VisiteurAsml visiteur)
+    {
+        visitDebutIfWorker(e, visiteur);
+        e.getE2().accept(visiteur);
+        visitFinIfWorker(e, visiteur);
     }
     
     public static void visitCallBaseWorker(CallBaseAsml e, VisiteurAsml visiteur)
@@ -50,5 +69,9 @@ public class UtilVisiteur {
         {
             argument.accept(visiteur);
         }
+    }
+    
+    public static void visitNegBaseWorker(NegBaseAsml e, VisiteurAsml visiteur) {
+        e.getE().accept(visiteur);
     }
 }

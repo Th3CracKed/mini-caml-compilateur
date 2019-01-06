@@ -4,14 +4,18 @@ import visiteur.ObjVisiteurAsml;
 import visiteur.VisiteurAsml;
 
 public class VarAsml implements VarOuIntAsml {
-    private final String idString;
+    private String idString;
 
     public VarAsml(String idString) {
-        this.idString = idString;
+        setIdString(idString);
     }
 
     public String getIdString(){
         return idString;
+    }    
+
+    public final void setIdString(String idString) {
+        this.idString = idString;
     }
     
     @Override

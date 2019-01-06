@@ -21,13 +21,13 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
         environnementVar = new HashMap<>();
         environnementVar.put(Constantes.PRINT_INT_CAML, new TFun(new TInt(), new TUnit()));
         environnementVar.put(Constantes.PRINT_NEWLINE_CAML, new TFun(new TUnit(), new TUnit()));
-        /*environnementFonctions.put(Constantes.SIN_CAML, new TFun(new TFloat(), new TFloat()));
-        environnementFonctions.put(Constantes.COS_CAML, new TFun(new TFloat(), new TFloat()));
-        environnementFonctions.put(Constantes.SQRT_CAML, new TFun(new TFloat(), new TFloat()));
-        environnementFonctions.put(Constantes.ABS_FLOAT_CAML, new TFun(new TFloat(), new TFloat()));
-        environnementFonctions.put(Constantes.INT_OF_FLOAT_CAML, new TFun(new TFloat(), new TInt()));
-        environnementFonctions.put(Constantes.FLOAT_OF_INT_CAML, new TFun(new TInt(), new TFloat()));
-        environnementFonctions.put(Constantes.TRUNCATE_CAML, new TFun(new TFloat(), new TFloat()));*/
+        environnementVar.put(Constantes.SIN_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementVar.put(Constantes.COS_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementVar.put(Constantes.SQRT_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementVar.put(Constantes.ABS_FLOAT_CAML, new TFun(new TFloat(), new TFloat()));
+        environnementVar.put(Constantes.INT_OF_FLOAT_CAML, new TFun(new TFloat(), new TInt()));
+        environnementVar.put(Constantes.FLOAT_OF_INT_CAML, new TFun(new TInt(), new TFloat()));
+        environnementVar.put(Constantes.TRUNCATE_CAML, new TFun(new TFloat(), new TInt()));
         type = new TUnit();
         anciensTypes = new Stack<>();
     }
@@ -54,7 +54,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
 
     @Override
     public LinkedList<EquationType> visit(FloatMinCaml e) {
-        throw new NotYetImplementedException();
+        return creerSingleton(type, new TFloat());
     }
     
     private void changerType(Type type)
@@ -108,6 +108,11 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
         return visitOpBinaireWorker(e, typeOperandes, new TBool());
     }
     
+    private LinkedList<EquationType> visitOpArithmetiqueFloatWorker(OperateurArithmetiqueFloat e)
+    {
+        return visitOpBinaireWorker(e, new TFloat(), new TFloat());
+    }
+    
     @Override
     public LinkedList<EquationType> visit(Add e) {        
         return visitOpArithmetiqueIntWorker(e);
@@ -120,27 +125,27 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
 
     @Override
     public LinkedList<EquationType> visit(FNeg e) {
-        throw new NotYetImplementedException();
+        return visitOpUnaireWorker(e, new TFloat());
     }
 
     @Override
     public LinkedList<EquationType> visit(FAdd e) {
-        throw new NotYetImplementedException();
+        return visitOpArithmetiqueFloatWorker(e);
     }
 
     @Override
     public LinkedList<EquationType> visit(FSub e) {
-        throw new NotYetImplementedException();
+        return visitOpArithmetiqueFloatWorker(e);
     }
 
     @Override
     public LinkedList<EquationType> visit(FMul e) {
-        throw new NotYetImplementedException();
+        return visitOpArithmetiqueFloatWorker(e);
     }
 
     @Override
     public LinkedList<EquationType> visit(FDiv e) {
-        throw new NotYetImplementedException();
+        return visitOpArithmetiqueFloatWorker(e);
     }
     
     @Override
@@ -150,7 +155,12 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
 
     @Override
     public LinkedList<EquationType> visit(LE e) {
-        return visitOpRelationnelWorker(e, new TInt());
+        // l'operateur inférieur ou égal permet de comparer ou  2 flottants ou 2 entiers (mais pas un entier et un flottant) : le type des operandes doit etre le meme
+        // et etre egal a TInt ou TFloat (une equation de la forme ?1 = TNombre signifie ?1 = TInt ou ?2 = TFloat (on fait heriter TInt et TFloat de TNombre)
+        Type typeOperandes = Type.gen();
+        LinkedList<EquationType> equations = visitOpRelationnelWorker(e, typeOperandes);
+        equations.add(new EquationType(typeOperandes, new TNombre()));
+        return equations;
     }
 
     @Override

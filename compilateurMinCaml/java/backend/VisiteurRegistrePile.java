@@ -96,6 +96,39 @@ public class VisiteurRegistrePile implements VisiteurAsml {
             }
             emplacementsVar.put(e.getArguments().get(i).getIdString(), emplacement);
         }
+        /*int indEntier = nbParametresSupplementaires;
+        int indFloat = 0;
+        for(int i = 0 ; i < e.getArguments().size() ; i++)
+        {
+            int indParametre = indEntier+indFloat;
+            EmplacementMemoire emplacement = null;
+            if(variablesFloat.contains(e.getArguments().get(i).getIdString()))
+            {
+                if(indFloat<Constantes.REGISTRES_PARAMETRES.length)
+                {
+                    emplacement = new Registre(Constantes.REGISTRES_PARAMETRES[indFloat]);
+                }
+                else
+                {
+                    emplacement = new AdressePile((e.getArguments().size()-indParametre+Constantes.NB_REGISTRES_SAUVEGARDE_APPELE)*Constantes.TAILLE_MOT_MEMOIRE);
+                }
+                indFloat++;
+            }
+            else
+            {
+                if(indEntier<Constantes.REGISTRES_PARAMETRES.length)
+                {
+                    emplacement = new Registre(Constantes.REGISTRES_PARAMETRES[indEntier]);
+                }
+                else
+                {
+                    emplacement = new AdressePile((e.getArguments().size()-indParametre+Constantes.NB_REGISTRES_SAUVEGARDE_APPELE)*Constantes.TAILLE_MOT_MEMOIRE);
+                }
+                indEntier++;
+            }
+            emplacementsVar.put(e.getArguments().get(i).getIdString(), emplacement);
+        }
+        */
         e.getAsmt().accept(this);
     }
     
