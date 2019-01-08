@@ -47,8 +47,8 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
         sauvegarderEnvironnement(); 
         e.getE1().accept(this);
         restaurerEnvironnement();            
-        emplacementsVar.put(e.getIdString(), environnement.emplacementSuivant()); 
         sauvegarderEnvironnement(); 
+        emplacementsVar.put(e.getIdString(), environnement.emplacementSuivant(/* e.getIdString()*/)); 
         e.getE2().accept(this);
         restaurerEnvironnement();
     }

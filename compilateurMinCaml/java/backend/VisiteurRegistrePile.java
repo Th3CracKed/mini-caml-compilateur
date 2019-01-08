@@ -55,8 +55,8 @@ public class VisiteurRegistrePile implements VisiteurAsml {
         sauvegarderDecalage(); 
         e.getE1().accept(this);
         restaurerDecalage();        
-        emplacementsVar.put(e.getIdString(), new AdressePile(decalageSuivant())); 
         sauvegarderDecalage(); 
+        emplacementsVar.put(e.getIdString(), new AdressePile(decalageSuivant())); 
         e.getE2().accept(this);
         restaurerDecalage();
     }
