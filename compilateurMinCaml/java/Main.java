@@ -217,13 +217,13 @@ public class Main {
             erreurMax = Math.max(erreurMax, erreur);
         }
         System.out.println("erreur max : "+erreurMax);*/
-        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\typechecking\\valid");
+        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\compilation\\valid");
         for (File fichier : dossierTests.listFiles()) {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }  */
         //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\even-odd.ml", "-o", "out.s", "-asml"};
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\typechecking\\invalid\\funRenvoyantFunRenvoyantElleMeme.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\evaluationSh\\valid\\fun_many_params.ml", "-o", "out.s"};
         //System.out.println("myCos2(1.04) : "+myCos2(1.04));
         //System.out.println(0.0416666679084301f);
         lancerCompilateur(argv);

@@ -1,1 +1,0 @@
-let (a,b) = (101,2) in print_int a

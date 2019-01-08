@@ -52,10 +52,10 @@ public class VisiteurRegistrePile implements VisiteurAsml {
 
     @Override
     public void visit(LetAsml e) {
-        emplacementsVar.put(e.getIdString(), new AdressePile(decalageSuivant())); 
         sauvegarderDecalage(); 
         e.getE1().accept(this);
-        restaurerDecalage();
+        restaurerDecalage();        
+        emplacementsVar.put(e.getIdString(), new AdressePile(decalageSuivant())); 
         sauvegarderDecalage(); 
         e.getE2().accept(this);
         restaurerDecalage();

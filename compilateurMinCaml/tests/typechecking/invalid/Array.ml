@@ -1,1 +1,0 @@
-let x = Array.create true () in print_int (x.(0))

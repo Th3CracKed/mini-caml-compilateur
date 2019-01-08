@@ -1,1 +1,0 @@
-let x = 1.5 in print_int x

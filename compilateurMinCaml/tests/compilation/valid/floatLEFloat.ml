@@ -1,1 +1,0 @@
-let x = if(1.1 <= 1.2)then 12 else 34 in print_int x

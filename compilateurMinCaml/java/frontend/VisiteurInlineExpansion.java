@@ -9,7 +9,7 @@ import visiteur.*;
 
 public class VisiteurInlineExpansion extends ObjVisitorExp {
     
-    private static final int TAILLE_MAX_INLINE_EXPANSION = 10000;    
+    private static final int TAILLE_MAX_INLINE_EXPANSION = -1;//100;    
     private final HashMap<String, FunDef> fonctionAEtendre;
     
     public VisiteurInlineExpansion()

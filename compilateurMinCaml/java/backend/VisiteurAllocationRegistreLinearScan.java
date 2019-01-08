@@ -8,8 +8,8 @@ import util.Constantes;
 import visiteur.VisiteurAsml;
 
 public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
-    private int decalage;
-    private final Stack<EmplacementMemoire> anciensDecalages;
+    private Environnement environnement;
+    private final Stack<Environnement> anciensEnvironnements;
     private final HashMap<String, EmplacementMemoire> emplacementsVar;
     private final HashMap<String, EnvironnementClosure> closures;
     
@@ -20,43 +20,37 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     
     public VisiteurAllocationRegistreLinearScan(HashMap<String, EnvironnementClosure> closures)
     {
-        //remettreDecalageAZero();
-        anciensDecalages = new Stack<>();
-        emplacementsVar = new HashMap<>();
+        anciensEnvironnements = new Stack<>();
+        emplacementsVar = new HashMap<>();     
         this.closures = closures;
+        viderEnvironnement();
     }
     
-    /*private void remettreDecalageAZero()
+    private void viderEnvironnement()
     {
-        decalage = 0;
+        environnement = new Environnement();
     }
     
-    private void sauvegarderDecalage()
+    private void sauvegarderEnvironnement()
     {
-        anciensDecalages.push(new AdressePile(decalage));
+        anciensEnvironnements.push((Environnement)environnement.clone());
     }
     
-    private void restaurerDecalage()
+    private void restaurerEnvironnement()
     {
-        decalage = ((AdressePile)anciensDecalages.pop()).getDecalage();
+        environnement = anciensEnvironnements.pop();
     }
-    
-    private EmplacementMemoire emplacementSuivant()
-    {
-        int dernierDecalage = decalage;
-        decalage -= Constantes.TAILLE_MOT_MEMOIRE;
-        return dernierDecalage;
-    }*/
     
     @Override
     public void visit(LetAsml e) {
-        //emplacementsVar.put(e.getIdString(), emplacementSuivant()); 
-        //sauvegarderDecalage(); 
+        //LA TAILLE DE L'ENVIRONNEMENT NE SE CALCULE PLUS DE LA MEME MANIERE DANS LA GENERATION DE CODE ARM; visiteurTailleEnvironnement implement Visiteur et non objVisiteur    
+        sauvegarderEnvironnement(); 
         e.getE1().accept(this);
-        //restaurerDecalage();
-        //sauvegarderDecalage(); 
+        restaurerEnvironnement();            
+        emplacementsVar.put(e.getIdString(), environnement.emplacementSuivant()); 
+        sauvegarderEnvironnement(); 
         e.getE2().accept(this);
-        //restaurerDecalage();
+        restaurerEnvironnement();
     }
 
     @Override
@@ -108,13 +102,12 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     
     private void visitFinIfWorker(IfAsml e)
     {
-        LA TAILLE DE L'ENVIRONNEMENT NE SE CALCULE PLUS DE LA MEME MANIERE DANS LA GENERATION DE CODE ARM
-        sauvegarderDecalage(); 
+        sauvegarderEnvironnement(); 
         e.getESiVrai().accept(this);
-        restaurerDecalage();
-        sauvegarderDecalage();
+        restaurerEnvironnement();
+        sauvegarderEnvironnement();
         e.getESiFaux().accept(this);
-        restaurerDecalage();
+        restaurerEnvironnement();
     }
     
     private void visitIfIntWorker(IfIntAsml e)

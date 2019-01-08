@@ -1,1 +1,0 @@
-let x = print_int(truncate (-.12.5)) in ()

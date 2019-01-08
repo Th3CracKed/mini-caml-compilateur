@@ -1,1 +1,0 @@
-let x = Array.create 1 2 in let y = x.(0)<-101 in print_int x.(0)

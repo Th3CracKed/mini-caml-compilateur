@@ -1,1 +1,0 @@
-let x = in print_int x

@@ -1,1 +1,0 @@
-let x = print_int(int_of_float ((sqrt 3.5)*.100.0)) in ()

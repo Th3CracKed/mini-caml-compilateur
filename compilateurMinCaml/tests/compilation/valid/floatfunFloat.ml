@@ -1,1 +1,0 @@
-let rec sommeFloat x y = x +. y in print_int (int_of_float ((sommeFloat 11.5 0.7)*.10.0))

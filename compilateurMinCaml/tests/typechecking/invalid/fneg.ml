@@ -1,1 +1,0 @@
-print_int (int_of_float (-.(true)))

@@ -1,1 +1,0 @@
-print_int (int_of_float ((101.3-.2.0)*.10.0))

@@ -1,1 +1,0 @@
-let rec f x = let rec g x = f in g in ()

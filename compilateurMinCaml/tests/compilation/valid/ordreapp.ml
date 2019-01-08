@@ -1,1 +1,0 @@
-let rec g b c d = let a = print_newline () in let e = print_int 2 in () in let rec f x = let i = print_newline () in let j = print_int 1 in g in let r = (f ()) (print_int 3) (print_newline ()) (print_int 4) in ()

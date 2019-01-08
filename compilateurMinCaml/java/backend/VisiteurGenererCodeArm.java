@@ -16,7 +16,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     private static final int NUM_REGISTRE_DESTINATION = 4;
     private static final int NUM_REGISTRE_OPERANDE1 = 4;
     private static final int NUM_REGISTRE_OPERANDE2 = 5;
-    private static final int NUM_REGISTRE_IMMEDIAT_INVALIDE = 6;
+    private static final int NUM_REGISTRE_IMMEDIAT_INVALIDE = 7;
     private static final int NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR = 7;
     //private static final int NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE = 8;
     

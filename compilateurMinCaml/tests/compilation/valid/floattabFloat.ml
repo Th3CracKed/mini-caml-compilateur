@@ -1,1 +1,0 @@
-let t = Array.create 2 5.7 in let ecr = t.(0) <- 6.2 in print_int(int_of_float ((t.(0) +. t.(1))*.10.0))
