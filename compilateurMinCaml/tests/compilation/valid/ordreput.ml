@@ -1,0 +1,1 @@
+let rec f x = let a = print_int 1 in let b = print_newline () in Array.create 1 1 in let rec g x = let a = print_int x in let b = print_newline () in x in let r = (f ()).(g 0) <- (g 2) in ()

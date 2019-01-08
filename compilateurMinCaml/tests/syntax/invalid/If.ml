@@ -1,0 +1,1 @@
+print_int (if then 101 else 2)

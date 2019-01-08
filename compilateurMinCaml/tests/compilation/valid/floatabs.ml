@@ -1,0 +1,1 @@
+let x = print_int(int_of_float (abs_float (-.12.4)*.10.0)) in ()

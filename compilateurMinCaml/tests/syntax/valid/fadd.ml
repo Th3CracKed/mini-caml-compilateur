@@ -1,0 +1,1 @@
+print_int (int_of_float (1.5+.1.6))

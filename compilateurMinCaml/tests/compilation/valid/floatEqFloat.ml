@@ -1,0 +1,1 @@
+let x = if(1.1 = 1.1)then 12 else 12 in print_int x (* comparer 2 flottants avec l'operateur egal n'est pas fiable, il faut plutot verifier que la valeur absolue de leur difference est inferieure a un flottant strictement positif et proche de 0 (ce test verifie simplement que la verification de l'egalite de 2 flottants est possible, sans verifier son resultat *)
