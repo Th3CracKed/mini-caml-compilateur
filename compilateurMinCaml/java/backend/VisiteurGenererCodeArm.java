@@ -2,7 +2,6 @@ package backend;
 
 import arbreasml.*;
 import arbremincaml.*;
-import frontend.OptionsGenerationCodeArm;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -633,7 +632,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrireAvecIndentation("LDR R0, ="+Constantes.DEUX_PI_ARM+"\n");
             ecrireAvecIndentation("FLDS S1, [R0]\n");
             ecrireAvecIndentation("FDIVS S2, S0, S1\n");
-            ecrireAvecIndentation("FTOSIS S2, S2\n");
+            ecrireAvecIndentation("FTOSIZS S2, S2\n");
             ecrireAvecIndentation("FSITOS S2, S2\n");
             ecrireAvecIndentation("FMULS S2, S2, S1\n");
             ecrireAvecIndentation("FSUBS S0, S0, S2\n");
@@ -917,6 +916,7 @@ sinSinon:
         }*/
         e.getESiVrai().accept(this);
         ecrireAvecIndentation("B " + labelEndIf + "\n");
+        ecrire(LTORG+"\n");
         ecrire(labelElse + ":\n");
         e.getESiFaux().accept(this);
         ecrire(labelEndIf + ":\n");

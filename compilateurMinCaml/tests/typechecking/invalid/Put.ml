@@ -1,0 +1,1 @@
+let x = Array.create 1 2 in let y = x.(0)<-true in print_int x.(0)

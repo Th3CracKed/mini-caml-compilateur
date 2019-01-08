@@ -1,0 +1,1 @@
+print_int (int_of_float ((-.(2.6))*.10.0))

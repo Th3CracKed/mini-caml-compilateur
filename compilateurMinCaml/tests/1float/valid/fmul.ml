@@ -1,1 +1,0 @@
-let x = print_int(int_of_float (2.2*.5.7)) in ()

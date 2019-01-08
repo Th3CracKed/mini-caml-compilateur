@@ -1,1 +1,0 @@
-let x = true in let y = if x then 1 else 2 in print_int y

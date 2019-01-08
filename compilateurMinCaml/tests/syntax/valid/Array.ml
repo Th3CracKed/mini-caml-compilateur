@@ -1,0 +1,1 @@
+let x = Array.create 1 101 in print_int (x.(0))

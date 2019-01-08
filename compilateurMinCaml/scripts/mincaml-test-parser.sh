@@ -39,7 +39,7 @@ function lancerTest()
 	else
 		codeRetourAttendu=0
 	fi
-	#printf "$codeRetourAttendu "
+	#echo "codeRetourAttendu : $codeRetourAttendu "
 	if [[ "$fichierATester" =~ tests/syntax/.* ]]
 	then
 		#echo "syntax"
@@ -114,7 +114,6 @@ echo ""
 echo "///////////////////////////////////////////////////////"
 echo "Nombre de tests qui passent : $nbTestsQuiPasse/$nbTests"
 echo "///////////////////////////////////////////////////////"
-
 
 
 

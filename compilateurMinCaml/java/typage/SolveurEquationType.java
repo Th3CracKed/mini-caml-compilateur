@@ -118,6 +118,11 @@ public class SolveurEquationType {
             else // if(t1Tete instanceof TVar)
             {
                 TVar t1TeteTVar = (TVar)t1Tete;
+                System.out.println("t1TeteTVar : "+t1TeteTVar+", t2Tete : "+t2Tete);
+                if((!(t2Tete instanceof TVar) || !((TVar)t2Tete).getV().equals(t1TeteTVar.getV())) && contientCetteVariable(t2Tete, t1TeteTVar))
+                {
+                    throw new MyCompilationException(messageMalType);
+                }
                 boolean aRemplace = false;
                 for(EquationType equation : listeEquations)
                 {
@@ -162,6 +167,32 @@ public class SolveurEquationType {
             return false;
         }
     }
+    
+    private static boolean contientCetteVariable(Type type, TVar var)
+    {
+        if(type instanceof TVar && ((TVar)type).getV().equals(var.getV()))
+        {
+            return true;
+        }
+        else if(type instanceof TFun)
+        {
+            TFun typeTFun = (TFun)type;
+            return contientCetteVariable(typeTFun.getT1(), var) || contientCetteVariable(typeTFun.getT2(), var);
+        }
+        else if(type instanceof TTuple)
+        {
+            return ((TTuple) type).getTs().stream().anyMatch(x->contientCetteVariable(x, var));
+        }
+        else if(type instanceof TArray)
+        {
+            return contientCetteVariable(((TArray)type).getT(), var);
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
     private static boolean remplacer(EquationType equationDOrigine, TVar variable, Type valeurVariable)
     {
         boolean aRemplace = false;

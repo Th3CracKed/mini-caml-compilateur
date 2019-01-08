@@ -1,1 +1,0 @@
-let x = 1000 in print_int x

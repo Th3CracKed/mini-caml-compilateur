@@ -1,1 +1,0 @@
-let x = if (let f = print_int 1 in print_newline ()) = print_int 1 then 1 else 1 in ()

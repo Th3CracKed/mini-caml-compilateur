@@ -20,7 +20,7 @@ public class FloatMinCaml extends Valeur<Float> {
             {
                 strValeur = ((f >= 0)?"+":"-")+"infini";
             }
-            throw new MyCompilationException(strValeur+" n'est pas une valeur valide pour un nombre flottant");
+            throw new MyCompilationException(strValeur+" n'est pas une valeur valide pour un nombre flottant en ASML");
         }
     }
 

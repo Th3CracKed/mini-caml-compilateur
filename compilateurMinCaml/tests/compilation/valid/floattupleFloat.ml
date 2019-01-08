@@ -1,0 +1,1 @@
+let (x,y) = (11.2, 0.3) in print_int(int_of_float ((x +. y)*.10.0))

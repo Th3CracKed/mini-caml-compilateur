@@ -1,0 +1,1 @@
+print_int (if 1 <= true then 101 else 4)

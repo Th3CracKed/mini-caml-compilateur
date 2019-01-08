@@ -1,1 +1,0 @@
-let (x,y) = (11.6, 0.5) in print_int(int_of_float (x +. y))

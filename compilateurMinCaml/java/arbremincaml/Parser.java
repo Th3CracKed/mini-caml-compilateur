@@ -11,6 +11,12 @@ import java.util.*;
   */
 @SuppressWarnings({"rawtypes"})
 public class Parser extends java_cup.runtime.lr_parser {
+    
+@Override
+public void report_error(String message, Object info)
+{
+    throw new RuntimeException(message);
+}
 
  public final Class getSymbolContainer() {
     return Sym.class;

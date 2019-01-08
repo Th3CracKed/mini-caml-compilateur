@@ -5,6 +5,7 @@ import arbremincaml.Exp;
 import arbremincaml.Let;
 import arbremincaml.*;
 import arbremincaml.Type;
+import java.util.List;
 import visiteur.ObjVisitorExp;
 
 public class VisiteurLetImbriques extends ObjVisitorExp {
@@ -57,7 +58,7 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
         }
     }*/        
     
-    /*private static Exp insererLetTuple(List<Id> ids, List<Type> ts, Exp e1, Exp e2)
+    private static Exp insererLetTuple(List<Id> ids, List<Type> ts, Exp e1, Exp e2)
     {
         if(e1 instanceof Let)
         {
@@ -79,13 +80,20 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
         {
             return new LetTuple(ids, ts, e1, e2);
         }
-    }*/
+    }
     
     @Override
     public Exp visit(Let e) {
         Exp e1 = e.getE1().accept(this);
         Exp e2 = e.getE2().accept(this);
         return insererLet(e.getId(), e1, e2); 
+    }
+    
+    @Override
+    public Exp visit(LetTuple e) {
+        Exp e1 = e.getE1().accept(this);
+        Exp e2 = e.getE2().accept(this);
+        return insererLetTuple(e.getIds(), e.getTs(), e1, e2); 
     }
     
     /*@Override

@@ -1,0 +1,1 @@
+let x = print_int(int_of_float (1000.0*.(sin 1.04))) in ()

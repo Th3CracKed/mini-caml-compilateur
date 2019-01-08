@@ -1,1 +1,0 @@
-let x = print_int(int_of_float (11.5+.0.51)) in ()

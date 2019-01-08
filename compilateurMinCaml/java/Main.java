@@ -94,9 +94,9 @@ public class Main {
         return x;
     }
     
-    public static float inverseFact(int n)
+    public static double inverseFact(int n)
     {
-        float resultat = 1;
+        double resultat = 1;
         for(int i = 1 ; i <= n ; i++)
         {
             resultat *= 1.0/i;
@@ -112,7 +112,7 @@ public class Main {
             double terme = (double)Math.pow(t, i)*inverseFact(i);
             resultat += terme*signe;
             double coefficient = signe*inverseFact(i);
-            System.out.print("+ "+(new BigDecimal(coefficient, new MathContext(16, RoundingMode.HALF_EVEN))).stripTrailingZeros().toPlainString()+"*x^"+i);
+            System.out.print("+ "+(float)coefficient/*(new BigDecimal(coefficient, new MathContext(8, RoundingMode.HALF_EVEN))).stripTrailingZeros().toPlainString()*/+"*x^"+i);
             signe *= -1;
         }
         System.out.println();
@@ -220,15 +220,16 @@ public class Main {
             erreurMax = Math.max(erreurMax, erreur);
         }
         System.out.println("erreur max : "+erreurMax);*/
-        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\1float\\valid");
+        /*File dossierTests = new File("C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\typechecking\\valid");
         for (File fichier : dossierTests.listFiles()) {
             argv = new String[]{fichier.getAbsolutePath(), "-o", "out.s"};
             lancerCompilateur(argv);
         }  */
         //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\even-odd.ml", "-o", "out.s", "-asml"};
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\matmul.ml", "-o", "out.s", "-asml"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\typechecking\\invalid\\funRenvoyantFunRenvoyantElleMeme.ml", "-o", "out.s"};
         //System.out.println("myCos2(1.04) : "+myCos2(1.04));
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\even-odd.ml", "-o", "out.s", "-asml"};
+        //System.out.println(0.0416666679084301f);
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Downloads\\teststuplesetarrays\\valid\\tupleOfTuples.ml", "-o", "out.s"};
         lancerCompilateur(argv);
     }
 
@@ -324,12 +325,14 @@ public class Main {
         /* ========= */ System.out.println("======================ENTREE : " + nomFichierEntree);
         Parser p = null;
         try {
+            
             p = new Parser(new Lexer(new FileReader(nomFichierEntree)));
         } catch (FileNotFoundException e) {
             throw new MyCompilationException("Le fichier à compiler n'existe pas");
         }
         Exp expression;
         try {
+            
             expression = (Exp) p.parse().value;
         } catch (Exception ex) {
             throw new MyCompilationException(ex.getMessage());

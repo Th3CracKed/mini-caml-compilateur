@@ -1,0 +1,1 @@
+let rec f x = let a = print_int (int_of_float (cos(x)*.(float_of_int 1000))) in let b = print_newline () in let c = print_int (int_of_float (sin(x)*.(float_of_int 1000))) in let d = print_newline () in if (x < 10.0) then f(x+.0.5) else () in f (-.(10.0))

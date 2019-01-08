@@ -17,11 +17,12 @@ public class KNormVisitor extends ObjVisitorExp {
         for (int i = 0; i < e.getEs().size(); i++) {
             vars.add(new Var(Id.gen()));
         }
-        Exp resultat = new App(varFonction, vars);
-        for (int i = 0; i < e.getEs().size(); i++) {
+        Let resultat = new Let(varFonction.getId(), Type.gen(), e.getE().accept(this), new App(varFonction, vars));
+        for (int i = 0 ; i < e.getEs().size() ; i++)
+        {
             resultat = new Let(((Var) vars.get(i)).getId(), Type.gen(), e.getEs().get(i).accept(this), resultat);
         }
-        return new Let(varFonction.getId(), Type.gen(), e.getE().accept(this), resultat);
+        return resultat;
     }
 
     @Override
@@ -51,8 +52,8 @@ public class KNormVisitor extends ObjVisitorExp {
         Var var2 = new Var(Id.gen());
         Exp e1Accepte = e1.accept(this);
         Exp e2Accepte = e2.accept(this);
-        return new Let(var1.getId(), Type.gen(), e1Accepte,
-                    new Let(var2.getId(), Type.gen(), e2Accepte, constructeur.apply(var1, var2)));
+        return new Let(var2.getId(), Type.gen(), e2Accepte,
+                    new Let(var1.getId(), Type.gen(), e1Accepte, constructeur.apply(var1, var2)));
     }
     
     private Let visitOpBinaireWorker(OperateurBinaire e, BiFunction<Exp, Exp, ? extends Exp> constructeurOpBinaire)
@@ -104,7 +105,7 @@ public class KNormVisitor extends ObjVisitorExp {
         Eq e1Eq = (Eq) e1;
         Var varE1Gauche = new Var(Id.gen());
         Var varE1Droite = new Var(Id.gen());
-        return new Let(varE1Gauche.getId(), Type.gen(), e1Eq.getE1(), new Let(varE1Droite.getId(), Type.gen(), e1Eq.getE2(), new If(createurOpRel.apply(varE1Gauche, varE1Droite), e2, e3)));
+        return new Let(varE1Droite.getId(), Type.gen(), e1Eq.getE2(), new Let(varE1Gauche.getId(), Type.gen(), e1Eq.getE1(), new If(createurOpRel.apply(varE1Gauche, varE1Droite), e2, e3)));
     }
 
     @Override
@@ -140,9 +141,9 @@ public class KNormVisitor extends ObjVisitorExp {
         Type new_type3 = Type.gen();
 
         Let res = 
-        new Let(new_var1, new_type1, e1,
+        new Let(new_var3, new_type3, e3,
           new Let(new_var2, new_type2, e2,
-              new Let(new_var3, new_type3, e3,
+              new Let(new_var1, new_type1, e1,
                 new Put(new Var(new_var1), new Var(new_var2), new Var(new_var3)))));
         return res;
     }
@@ -166,7 +167,7 @@ public class KNormVisitor extends ObjVisitorExp {
         }
         Var var = new Var(Id.gen());
         Let resultat = new Let(var.getId(), Type.gen(), new Tuple(vars), var);
-        for (int i = 0; i < composantes.size(); i++) {
+        for (int i = 0; i < composantes.size() ; i++) {
             resultat = new Let(((Var) vars.get(i)).getId(), Type.gen(), composantes.get(i).accept(this), resultat);
         }
         return resultat;

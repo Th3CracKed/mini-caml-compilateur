@@ -1,1 +1,0 @@
-let x = print_int(int_of_float (10.0*.(sin 1.04))) in ()
