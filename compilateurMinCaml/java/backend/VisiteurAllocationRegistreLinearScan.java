@@ -5,13 +5,11 @@ import frontend.EnvironnementClosure;
 import java.util.HashMap;
 import java.util.Stack;
 import util.Constantes;
-import visiteur.*;
+import visiteur.VisiteurAsml;
 
-public class VisiteurRegistrePile implements VisiteurAsml {
-
+public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     private int decalage;
     private final Stack<EmplacementMemoire> anciensDecalages;
-    
     private final HashMap<String, EmplacementMemoire> emplacementsVar;
     private final HashMap<String, EnvironnementClosure> closures;
     
@@ -20,15 +18,15 @@ public class VisiteurRegistrePile implements VisiteurAsml {
         return emplacementsVar;
     }
     
-    public VisiteurRegistrePile(HashMap<String, EnvironnementClosure> closures)
+    public VisiteurAllocationRegistreLinearScan(HashMap<String, EnvironnementClosure> closures)
     {
-        remettreDecalageAZero();
+        //remettreDecalageAZero();
         anciensDecalages = new Stack<>();
         emplacementsVar = new HashMap<>();
         this.closures = closures;
     }
     
-    private void remettreDecalageAZero()
+    /*private void remettreDecalageAZero()
     {
         decalage = 0;
     }
@@ -43,22 +41,22 @@ public class VisiteurRegistrePile implements VisiteurAsml {
         decalage = ((AdressePile)anciensDecalages.pop()).getDecalage();
     }
     
-    private int decalageSuivant()
+    private EmplacementMemoire emplacementSuivant()
     {
         int dernierDecalage = decalage;
         decalage -= Constantes.TAILLE_MOT_MEMOIRE;
         return dernierDecalage;
-    }
-
+    }*/
+    
     @Override
     public void visit(LetAsml e) {
-        emplacementsVar.put(e.getIdString(), new AdressePile(decalageSuivant())); 
-        sauvegarderDecalage(); 
+        //emplacementsVar.put(e.getIdString(), emplacementSuivant()); 
+        //sauvegarderDecalage(); 
         e.getE1().accept(this);
-        restaurerDecalage();
-        sauvegarderDecalage(); 
+        //restaurerDecalage();
+        //sauvegarderDecalage(); 
         e.getE2().accept(this);
-        restaurerDecalage();
+        //restaurerDecalage();
     }
 
     @Override
@@ -70,7 +68,7 @@ public class VisiteurRegistrePile implements VisiteurAsml {
             nbParametresSupplementaires = 1;
             emplacementsVar.putIfAbsent(Constantes.SELF_ASML, new Registre(Constantes.REGISTRES_PARAMETRES[0])); 
         }
-        remettreDecalageAZero();
+        //remettreDecalageAZero();
         for(int i = 0 ; i < e.getArguments().size() ; i++)
         {
             int j = i + nbParametresSupplementaires;
@@ -85,43 +83,10 @@ public class VisiteurRegistrePile implements VisiteurAsml {
             }
             emplacementsVar.put(e.getArguments().get(i).getIdString(), emplacement);
         }
-        /*int indEntier = nbParametresSupplementaires;
-        int indFloat = 0;
-        for(int i = 0 ; i < e.getArguments().size() ; i++)
-        {
-            int indParametre = indEntier+indFloat;
-            EmplacementMemoire emplacement = null;
-            if(variablesFloat.contains(e.getArguments().get(i).getIdString()))
-            {
-                if(indFloat<Constantes.REGISTRES_PARAMETRES.length)
-                {
-                    emplacement = new Registre(Constantes.REGISTRES_PARAMETRES[indFloat]);
-                }
-                else
-                {
-                    emplacement = new AdressePile((e.getArguments().size()-indParametre+Constantes.NB_REGISTRES_SAUVEGARDE_APPELE)*Constantes.TAILLE_MOT_MEMOIRE);
-                }
-                indFloat++;
-            }
-            else
-            {
-                if(indEntier<Constantes.REGISTRES_PARAMETRES.length)
-                {
-                    emplacement = new Registre(Constantes.REGISTRES_PARAMETRES[indEntier]);
-                }
-                else
-                {
-                    emplacement = new AdressePile((e.getArguments().size()-indParametre+Constantes.NB_REGISTRES_SAUVEGARDE_APPELE)*Constantes.TAILLE_MOT_MEMOIRE);
-                }
-                indEntier++;
-            }
-            emplacementsVar.put(e.getArguments().get(i).getIdString(), emplacement);
-        }
-        */
         e.getAsmt().accept(this);
     }
     
-    @Override
+    /*@Override
     public void visit(IfEqIntAsml e) {
         visitIfIntWorker(e);
     }
@@ -143,6 +108,7 @@ public class VisiteurRegistrePile implements VisiteurAsml {
     
     private void visitFinIfWorker(IfAsml e)
     {
+        LA TAILLE DE L'ENVIRONNEMENT NE SE CALCULE PLUS DE LA MEME MANIERE DANS LA GENERATION DE CODE ARM
         sauvegarderDecalage(); 
         e.getESiVrai().accept(this);
         restaurerDecalage();
@@ -173,5 +139,5 @@ public class VisiteurRegistrePile implements VisiteurAsml {
     @Override
     public void visit(IfLEFloatAsml e) {
         visitIfFloatWorker(e);
-    }
+    } */
 }

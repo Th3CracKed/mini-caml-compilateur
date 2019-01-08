@@ -7,9 +7,6 @@ import arbremincaml.*;
 import backend.*;
 import frontend.*;
 import java.io.*;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -229,7 +226,6 @@ public class Main {
         //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\typechecking\\invalid\\funRenvoyantFunRenvoyantElleMeme.ml", "-o", "out.s"};
         //System.out.println("myCos2(1.04) : "+myCos2(1.04));
         //System.out.println(0.0416666679084301f);
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Downloads\\teststuplesetarrays\\valid\\tupleOfTuples.ml", "-o", "out.s"};
         lancerCompilateur(argv);
     }
 
