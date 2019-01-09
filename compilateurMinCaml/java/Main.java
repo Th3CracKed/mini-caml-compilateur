@@ -7,9 +7,12 @@ import arbremincaml.*;
 import backend.*;
 import frontend.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import typage.*;
 import util.*;
 
@@ -223,7 +226,7 @@ public class Main {
             lancerCompilateur(argv);
         }  */
         //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\even-odd.ml", "-o", "out.s", "-asml"};
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\evaluationSh\\valid\\fun_many_params.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\fib.ml", "-o", "out.s"};
         //System.out.println("myCos2(1.04) : "+myCos2(1.04));
         //System.out.println(0.0416666679084301f);
         lancerCompilateur(argv);
@@ -405,9 +408,26 @@ public class Main {
                     PrintStream fichierSortieASML = new PrintStream(nomFichierSortie);
                     arbreAsml.accept(new VisiteurGenererCodeAsml(fichierSortieASML));
                 } else {
-                    VisiteurRegistrePile visAllocationRegistre = new VisiteurRegistrePile(closures);
+                    VisiteurAllocationRegistreLinearScan visAllocationRegistre = new VisiteurAllocationRegistreLinearScan(closures);
                     arbreAsml.accept(visAllocationRegistre);/* ========= */ System.out.println("\n======================EMPLACEMENTS DES VARIABLES");
                     System.out.println(visAllocationRegistre.getEmplacementsVar());
+                    
+                    HashMap<EmplacementMemoire, ArrayList<String>> emplacementVarInverse = new HashMap<>();
+                    for(String idString : visAllocationRegistre.getEmplacementsVar().keySet())
+                    {
+                        EmplacementMemoire emplacement = visAllocationRegistre.getEmplacementsVar().get(idString);
+                        List<String> ancienneValeur = emplacementVarInverse.get(emplacement);
+                        if(ancienneValeur == null)
+                        {
+                            emplacementVarInverse.put(emplacement, new ArrayList<>(Arrays.asList(idString)));
+                        }
+                        else
+                        {
+                            ancienneValeur.add(idString);
+                        }                        
+                    }
+                    System.out.println(emplacementVarInverse);
+                    
                     System.out.println();                    
                     PrintStream fichierSortieARM = new PrintStream(nomFichierSortie);
                     VisiteurOptionsGenerationDeCode visOptionsGenCodeArm = new VisiteurOptionsGenerationDeCode();

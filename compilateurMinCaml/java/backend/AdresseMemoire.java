@@ -1,10 +1,10 @@
 package backend;
 
-public class AdressePile extends EmplacementMemoire {
+public class AdresseMemoire extends EmplacementMemoire {
     
     private final int decalage;
     
-    public AdressePile(int decalageFP)
+    public AdresseMemoire(int decalageFP)
     {
         this.decalage = decalageFP;
     }

@@ -244,8 +244,8 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     }
     
     private void loadStoreWorker(EmplacementMemoire emplacement, int numReg, String nomInstruction, int numRegBase) {
-        if (emplacement instanceof AdressePile) {
-            int decalage = ((AdressePile) emplacement).getDecalage();
+        if (emplacement instanceof AdresseMemoire) {
+            int decalage = ((AdresseMemoire) emplacement).getDecalage();
             String strDecalage = null;
             if (estDecalageImmediatLoadStoreValide(decalage)) {
                 strDecalage = "#" + decalage;
@@ -384,7 +384,9 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrireAvecIndentation("MOV "+strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE)+", "+SP+"\n");
         }*/
         changerEstInstructionMov(true);
-        int tailleEnvironnement = e.accept(new VisiteurTailleEnvironnement())/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;
+        VisiteurTailleEnvironnement visTailleEnvironnement = new VisiteurTailleEnvironnement();
+        e.accept(visTailleEnvironnement);
+        int tailleEnvironnement = visTailleEnvironnement.getTailleEnvironnement()/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;   
         if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
         {
             ecrireAvecIndentation("PUSH {");
@@ -455,14 +457,14 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             else 
             {
                 EmplacementMemoire emplacementParam = emplacementVariable(e.getArguments().get(i).getIdString());
-                AdressePile adressePileParamPasseEnParam = null;
+                AdresseMemoire adressePileParamPasseEnParam = null;
                 if(emplacementParam instanceof Registre && Arrays.<Integer>asList(Constantes.REGISTRES_PARAMETRES).contains(((Registre)emplacementParam).getNumeroRegistre()))
                 {
                     // pour le programme let rec f x y = let rec g z t = z - t in g y x in f 1 2, g passe ses parametres dans l'ordre inverse, et si on ne gere pas ce cas, 
                     // le code genere serait MOV R0, R1; MOV R1, R0 (qui est faux car cela correspond a l'appel g y y). Pour eviter cela lorsqu'une fonction passe ses
                     // parametres a une autre, les valeurs des parametres sont chargee depuis la pile (elles sont presentes pour la sauvegarde du contexte par l'appelant
                     int indRegSauvegardeAppelant = Arrays.<Integer>asList(Constantes.REGISTRE_SAUVEGARDES_APPELANT).indexOf(((Registre)emplacementParam).getNumeroRegistre());
-                    adressePileParamPasseEnParam = new AdressePile(indRegSauvegardeAppelant * Constantes.TAILLE_MOT_MEMOIRE+tailleParametresAEmpiler);
+                    adressePileParamPasseEnParam = new AdresseMemoire(indRegSauvegardeAppelant * Constantes.TAILLE_MOT_MEMOIRE+tailleParametresAEmpiler);
                 }
                 if (i <= Constantes.REGISTRES_PARAMETRES.length - 1)
                 {
@@ -483,13 +485,13 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                     if(adressePileParamPasseEnParam != null)
                     {
                         loadStoreWorker(adressePileParamPasseEnParam, NUM_REGISTRE_OPERANDE1, LDR, Constantes.SP);
-                        loadStoreWorker(new AdressePile((nbParametres-1-i)*Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
+                        loadStoreWorker(new AdresseMemoire((nbParametres-1-i)*Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
                     }
                     else
                     {
                         chargerValeur(e.getArguments().get(i), NUM_REGISTRE_OPERANDE1, Constantes.FP);
                         int numReg = (emplacementParam instanceof Registre)?((Registre)emplacementParam).getNumeroRegistre():NUM_REGISTRE_OPERANDE1;
-                        loadStoreWorker(new AdressePile((nbParametres-1-i)*Constantes.TAILLE_MOT_MEMOIRE), numReg, STR, Constantes.SP);
+                        loadStoreWorker(new AdresseMemoire((nbParametres-1-i)*Constantes.TAILLE_MOT_MEMOIRE), numReg, STR, Constantes.SP);
                     }  
                     //loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
                 }
@@ -773,7 +775,7 @@ sinSinon:
         }
         else // if(emplacementSource instanceof AdressePile)
         {
-            loadStoreFloat((AdressePile)emplacementDest, NUM_REGISTRE_DESTINATION_FLOAT, false);
+            loadStoreFloat((AdresseMemoire)emplacementDest, NUM_REGISTRE_DESTINATION_FLOAT, false);
         } 
     }
           
@@ -946,7 +948,7 @@ sinSinon:
         return(decalageIndice >= MIN_DECALAGE_INDICE_LOAD_STORE_FLOAT && decalageIndice <= MAX_DECALAGE_INDICE_LOAD_STORE_FLOAT);
     }
     
-    private void loadStoreFloat(AdressePile emplacement, int numReg, boolean estInstructionLoad) {
+    private void loadStoreFloat(AdresseMemoire emplacement, int numReg, boolean estInstructionLoad) {
             String strRegistre = strRegFloat(numReg);
             int decalageEnOctet = emplacement.getDecalage();                     
             if (estDecalageLoadStoreFloatValide(decalageEnOctet))
@@ -971,7 +973,7 @@ sinSinon:
         }
         else // if(emplacementSource instanceof AdressePile)
         {
-            loadStoreFloat((AdressePile)emplacementSource, numRegDestination, true);
+            loadStoreFloat((AdresseMemoire)emplacementSource, numRegDestination, true);
         }        
     }
     
@@ -1008,140 +1010,31 @@ sinSinon:
         visitIfFloatWorker(e, "BHI");
     }
 
-    private class VisiteurTailleEnvironnement implements ObjVisiteurAsml<Integer> {
-
-        @Override
-        public Integer visit(AddAsml e) {
-            return 0;
+    private class VisiteurTailleEnvironnement implements VisiteurAsml {        
+        private int tailleEnvironnement;
+        
+        public VisiteurTailleEnvironnement()
+        {
+            setTailleEnvironnement(0);
         }
-
+        
         @Override
-        public Integer visit(FunDefConcreteAsml e) {
-            return e.getAsmt().accept(this);
-        }
-
-        @Override
-        public Integer visit(IntAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(LetAsml e) {
-            return Constantes.TAILLE_MOT_MEMOIRE + Math.max(e.getE1().accept(this), e.getE2().accept(this));
-        }
-
-        @Override
-        public Integer visit(NegAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(NopAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(ProgrammeAsml e) {
-            int resultat = e.getMainFunDef().accept(this);
-            for (FunDefAsml funDef : e.getFunDefs()) {
-                resultat += funDef.accept(this);
+        public void visit(LetAsml e) {
+            EmplacementMemoire emplacementVar = emplacementVariable(e.getIdString());
+            if(emplacementVar instanceof AdresseMemoire)
+            {
+                setTailleEnvironnement(Math.max(tailleEnvironnement, Math.abs(((AdresseMemoire)emplacementVar).getDecalage())+Constantes.TAILLE_MOT_MEMOIRE));
             }
-            return resultat;
+            e.getE1().accept(this);
+            e.getE2().accept(this);
         }
 
-        @Override
-        public Integer visit(SubAsml e) {
-            return 0;
+        public int getTailleEnvironnement() {
+            return tailleEnvironnement;
         }
 
-        @Override
-        public Integer visit(VarAsml e) {
-            return 0;
+        private void setTailleEnvironnement(int tailleEnvironnement) {
+            this.tailleEnvironnement = tailleEnvironnement;
         }
-
-        @Override
-        public Integer visit(NewAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(FNegAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(FAddAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(FSubAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(FMulAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(FDivAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(CallAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(CallClosureAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(MemLectureAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(MemEcritureAsml e) {
-            return 0;
-        }
-
-        @Override
-        public Integer visit(LetFloatAsml e) {
-            return Constantes.TAILLE_MOT_MEMOIRE;
-        }
-
-        private Integer visitIfWorker(IfAsml e) {
-            return Math.max(e.getESiVrai().accept(this), e.getESiFaux().accept(this));
-        }
-
-        @Override
-        public Integer visit(IfEqIntAsml e) {
-            return visitIfWorker(e);
-        }
-
-        @Override
-        public Integer visit(IfLEIntAsml e) {
-            return visitIfWorker(e);
-        }
-
-        @Override
-        public Integer visit(IfGEIntAsml e) {
-            return visitIfWorker(e);
-        }
-
-        @Override
-        public Integer visit(IfEqFloatAsml e) {
-            return visitIfWorker(e);
-        }
-
-        @Override
-        public Integer visit(IfLEFloatAsml e) {
-            return visitIfWorker(e);
-        }
-
     }
 }
