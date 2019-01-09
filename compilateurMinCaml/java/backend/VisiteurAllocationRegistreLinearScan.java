@@ -1,6 +1,15 @@
 package backend;
 
-import arbreasml.*;
+import arbreasml.AsmtAsml;
+import arbreasml.FunDefConcreteAsml;
+import arbreasml.IfAsml;
+import arbreasml.IfEqFloatAsml;
+import arbreasml.IfEqIntAsml;
+import arbreasml.IfGEIntAsml;
+import arbreasml.IfLEFloatAsml;
+import arbreasml.IfLEIntAsml;
+import arbreasml.LetAsml;
+import arbreasml.VarAsml;
 import frontend.EnvironnementClosure;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,9 +22,10 @@ import visiteur.VisiteurAsml;
 public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     private Environnement environnement;
     private final Stack<Environnement> anciensEnvironnements;
+    private HashSet<String> idStringVarInterieurIf;
+    private final Stack<HashSet<String>> anciensIdStringVarInterieurIf;
     private final HashMap<String, EmplacementMemoire> emplacementsVar;
     private final HashMap<String, EnvironnementClosure> closures;
-    private boolean estDansUnIf;
     
     public HashMap<String, EmplacementMemoire> getEmplacementsVar()
     {
@@ -25,14 +35,11 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     public VisiteurAllocationRegistreLinearScan(HashMap<String, EnvironnementClosure> closures)
     {
         anciensEnvironnements = new Stack<>();
+        anciensIdStringVarInterieurIf = new Stack<>();
+        idStringVarInterieurIf = new HashSet<>();
         emplacementsVar = new HashMap<>();     
         this.closures = closures;
-        setEstDansUnIf(false);
         viderEnvironnement();
-    }
-    
-    private void setEstDansUnIf(boolean estDansUnIf) {
-        this.estDansUnIf = estDansUnIf;
     }
     
     private void viderEnvironnement()
@@ -50,6 +57,17 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
         environnement = anciensEnvironnements.pop();
     }
     
+    private void sauvegarderEtViderIdStringVarInterieurIf()
+    {
+        anciensIdStringVarInterieurIf.push((HashSet<String>)idStringVarInterieurIf.clone());
+        idStringVarInterieurIf.clear();
+    }
+    
+    private void restaurerIdStringVarInterieurIf()
+    {
+        idStringVarInterieurIf = anciensIdStringVarInterieurIf.pop();
+    }
+    
     private void allouerEmplacemment(String idString)
     {
         emplacementsVar.put(idString, environnement.emplacementSuivant(idString)); 
@@ -59,25 +77,24 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     public void visit(LetAsml e) {   
         sauvegarderEnvironnement(); 
         e.getE1().accept(this);
-        restaurerEnvironnement();            
+        restaurerEnvironnement();          
         sauvegarderEnvironnement(); 
-        System.out.println("\nALLOUER "+e.getIdString()+" : "+emplacementsVar);
-        allouerEmplacemment(e.getIdString());
-        AsmtAsml e2 = e.getE2();
-        if(!estDansUnIf)
-        {
+        String idString = e.getIdString();
+        System.out.println("\nALLOUER "+idString+" : "+emplacementsVar);
+        allouerEmplacemment(idString);
+        idStringVarInterieurIf.add(idString);
+        AsmtAsml e2 = e.getE2();       
             VisiteurVariablesUtiliseesAsml visVarUtilisees = new VisiteurVariablesUtiliseesAsml();
             e2.accept(visVarUtilisees);
             List<String> idStringVariables = new ArrayList<>(environnement.getVariablesAllouees().keySet());
-            for(String idStringVarDansRegistre : idStringVariables)
+            for(String idStringVarAllouee : idStringVariables)
             {
-                if(!visVarUtilisees.getVariablesUtilisees().contains(idStringVarDansRegistre))
+                if(!visVarUtilisees.getVariablesUtilisees().contains(idStringVarAllouee) && idStringVarInterieurIf.contains(idStringVarAllouee))
                 {
-                    System.out.println("\ndans let "+e.getIdString()+" : liberer "+idStringVarDansRegistre);
-                    environnement.libererEmplacement(idStringVarDansRegistre);
+                    System.out.println("\ndans let "+idString+" : liberer "+idStringVarAllouee);
+                    environnement.libererEmplacement(idStringVarAllouee);
                 }
             }
-        }
         e2.accept(this);
         restaurerEnvironnement();
     }
@@ -126,14 +143,12 @@ public class VisiteurAllocationRegistreLinearScan implements VisiteurAsml {
     
     private void visitIfWorker(IfAsml e)
     {
-        setEstDansUnIf(true);
-        sauvegarderEnvironnement(); 
+        sauvegarderEtViderIdStringVarInterieurIf();
         e.getESiVrai().accept(this);
-        restaurerEnvironnement();
-        sauvegarderEnvironnement();
+        restaurerIdStringVarInterieurIf();
+        sauvegarderEtViderIdStringVarInterieurIf();
         e.getESiFaux().accept(this);
-        restaurerEnvironnement();
-        setEstDansUnIf(false);
+        restaurerIdStringVarInterieurIf();
     }  
     
     @Override

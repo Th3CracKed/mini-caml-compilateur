@@ -1,5 +1,7 @@
 package backend;
 
-public class VisiteurAllocationRegistreTreeScan {
+import visiteur.VisiteurAsml;
+
+public class VisiteurAllocationRegistreTreeScan implements VisiteurAsml {
     
 }

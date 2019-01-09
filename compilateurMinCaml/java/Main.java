@@ -226,7 +226,7 @@ public class Main {
             lancerCompilateur(argv);
         }  */
         //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\even-odd.ml", "-o", "out.s", "-asml"};
-        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\mincaml\\valid\\fib.ml", "-o", "out.s"};
+        //argv = new String[]{"C:\\Users\\Justin Kossonogow\\Desktop\\SYNCHRONISE_DRIVE\\mini-caml-compilateur\\compilateurMinCaml\\tests\\evaluationSh\\valid\\bigint.ml", "-o", "out.s"};
         //System.out.println("myCos2(1.04) : "+myCos2(1.04));
         //System.out.println(0.0416666679084301f);
         lancerCompilateur(argv);
