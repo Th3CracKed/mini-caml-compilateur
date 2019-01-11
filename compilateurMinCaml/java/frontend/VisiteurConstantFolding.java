@@ -100,20 +100,6 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
         return creerNoeudResultat(e, e);
     }
     
-    /*private Exp creerNoeudResultat(Valeur valeur)
-    {
-        Object val = valeur.getValeur();
-        if(val instanceof Integer && (Integer)val < 0)
-        {
-            Var var = new Var(Id.gen());
-            return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), new Neg(var));
-        }
-        else
-        {
-            return valeur;
-        }
-    }*/
-    
     @Override
     public Exp visit(Var e) {
         return creerNoeudResultat(e, super.visit(e));
@@ -121,96 +107,14 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
 
     @Override
     public Exp visit(Let e) {
-        //throw new NotYetImplementedException();
-        //Exp e1 = e.getE1();
-        //Exp e2 = e.getE2();
-        //Exp valeurE1 = creerNoeudResultat(e1, e1);
-        /*Exp e1Accepte = null;
-        Exp e2Accepte = null;*/
-        //VisiteurEffetDeBord v1 = new VisiteurEffetDeBord();
-        //e1.accept(v1);
-        /*if (valeurE1 instanceof Valeur) {
-            //e1Accepte = valeurE1;
-            varConstante.put(e.getId().getIdString(), (Valeur)valeurE1);
-        }*/
-        /*Valeur valeurE2 = e2.accept(new VisiteurCalculValeur());
-        VisiteurEffetDeBord v2 = new VisiteurEffetDeBord();
-        e2.accept(v2);
-        if (!v2.getAUnEffetDeBord() && valeurE2 != null && (!(valeurE2.getValeur() instanceof Integer) || (Integer) valeurE2.getValeur() >= 0)) {
-            e2Accepte = valeurE2;
-        }
-        if (e1Accepte == null) {
-            e1Accepte = e1.accept(this);
-        }
-        if (e2Accepte == null) {
-            e2Accepte = e2.accept(this);
-        }
-        return new Let(e.getId(), e.getT(), e1Accepte, e2Accepte);*/  
         Let resultat = (Let)super.visit(e);
         Exp nouvelE1 = resultat.getE1();
         if(nouvelE1 instanceof Valeur)
         {
             varConstante.put(e.getId().getIdString(), (Valeur)nouvelE1);
         }
-        return resultat;        
-        /*Exp e1 = e.getE1();
-        Exp e2 = e.getE2();        
-        String idString = e.getId().getIdString();
-        Valeur valeurAffecte = e1.accept(new VisiteurCalculValeurConstante());  
-        if(valeurAffecte == null)
-        {
-            return super.visit(e);
-        }
-        else
-        {
-            Object val = valeurAffecte.getValeur();
-            varConstante.put(idString, valeurAffecte);    
-            Exp e2Accepte = e2.accept(this);   
-            VisiteurEffetDeBord v = new VisiteurEffetDeBord();
-            e.accept(v); 
-            if(v.getAUnEffetDeBord())
-            {
-                return super.visit(e);
-            }
-            if(val instanceof Integer && (Integer)val < 0)
-            {         
-                Var var = new Var(Id.gen());
-                return new Let(var.getId(), Type.gen(), new Int(Math.abs((Integer)val)), new Let(e.getId(),e.getT(), new Neg(var),e2Accepte));
-            }
-            else
-            {                  
-                return new Let(e.getId(),e.getT(),valeurAffecte,e2Accepte);
-            }
-        }*/
+        return resultat; 
     }
-
-    /*@Override
-    public Exp visit(LetRec e) {
-        FunDef funDef = e.getFd();
-        Exp eFunDef = funDef.getE();
-        Exp exp = e.getE();
-        Valeur valeurEFunDef = eFunDef.accept(new VisiteurCalculValeurConstante());
-        Exp eFunDefAccepte = null;
-        Exp expAccepte = null;
-        VisiteurEffetDeBord vEFunDef = new VisiteurEffetDeBord();
-        eFunDef.accept(vEFunDef);
-        if (!vEFunDef.getAUnEffetDeBord() && valeurEFunDef != null && (!(valeurEFunDef.getValeur() instanceof Integer) || (Integer) valeurEFunDef.getValeur() >= 0)) {
-            eFunDefAccepte = valeurEFunDef;
-        }
-        Valeur valeurExp = exp.accept(new VisiteurCalculValeurConstante());
-        VisiteurEffetDeBord vExp = new VisiteurEffetDeBord();
-        exp.accept(vExp);
-        if (!vExp.getAUnEffetDeBord() && valeurExp != null && (!(valeurExp.getValeur() instanceof Integer) || (Integer) valeurExp.getValeur() >= 0)) {
-            expAccepte = valeurExp;
-        }
-        if (eFunDefAccepte == null) {
-            eFunDefAccepte = eFunDef.accept(this);
-        }
-        if (expAccepte == null) {
-            expAccepte = exp.accept(this);
-        }
-        return new LetRec(new FunDef(funDef.getId(), funDef.getType(), funDef.getArgs(), eFunDefAccepte), expAccepte);
-    }*/
 
     @Override
     public Exp visit(App e) {
@@ -371,8 +275,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
 
         @Override
         public Valeur visit(Eq e) {
-            return visitOpRelationnelWorker(e, (a, b) -> a.equals(b));// on peut utiliser la méthode equals car les valeurs sont soit des Boolean, soit des Integer, soit des Tuple
-
+            return visitOpRelationnelWorker(e, (a, b) -> a.equals(b)); // on peut utiliser la méthode equals car les valeurs sont soit des Boolean, soit des Integer, soit des Tuple (la classe tuple redefinit la methode equals)
         }
 
         @Override
@@ -427,7 +330,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
             for (Exp composante : e.getEs()) {
                 composantesAcceptes.add(composante.accept(this));
             }
-            if (composantesAcceptes.stream().anyMatch(x -> x != null)) // si au moins une composante du tuple est constante, on a besoin de la renvoyer
+            if (composantesAcceptes.stream().anyMatch(x -> x != null)) // si au moins une composante du tuple est constante, on a besoin de le renvoyer
             {
                 return new Tuple(composantesAcceptes);
             } else {

@@ -32,9 +32,6 @@ public class VisiteurConversionClosure implements Visitor {
                 }
             }
         }
-        /*closuresRenvoyes = new HashMap<>(closures);
-        closuresRenvoyes.put("_f24", new EnvironnementClosure(Arrays.asList("v21", "_f22"), Arrays.asList()));
-        closuresRenvoyes.put("_f22", new EnvironnementClosure(Arrays.asList("v21", "v20", "_f24"), Arrays.asList()));*/
         return closuresRenvoyes;
     }
     
@@ -92,7 +89,7 @@ public class VisiteurConversionClosure implements Visitor {
         public void visit(Var e)
         {
             String idString = e.getId().getIdString();
-            if(!variablesLiees.contains(idString) && !Constantes.FONCTION_EXTERNES_MINCAML.contains(idString) /*&& !Id.estUnLabel(idString)*/)
+            if(!variablesLiees.contains(idString) && !Constantes.FONCTION_EXTERNES_MINCAML.contains(idString))
             {
                 variablesLibres.add(idString);
             }

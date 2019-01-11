@@ -3,7 +3,16 @@ package arbremincaml;
 import visiteur.ObjVisitor;
 import visiteur.Visitor;
 
+/**
+ * Noeud de l'arbre MinCaml correspondant à la soustraction de nombres flottants
+ */
 public class FSub extends OperateurArithmetiqueFloat {
+    
+    /**
+     * Cree un noeud MinCaml correspondant à la soustraction de nombres flottants avec comme opérandes e1 et e2
+     * @param e1 le premier opérande du noeud
+     * @param e2 le second opérande du noeud
+     */
     public FSub(Exp e1, Exp e2) {
         super(e1,e2);
     }

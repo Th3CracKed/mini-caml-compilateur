@@ -5,33 +5,59 @@ import java.util.LinkedList;
 import java.util.List;
 import util.MyCompilationException;
 
-
+/**
+ * Classe contenant la méthode permettant de résoudre une liste d'équations de type
+ */
 public class SolveurEquationType {
+    private static final String MESSAGE_PROGRAMME_MAL_TYPE = "Le programme spécifié en entrée n'est pas correctement typé";
     
+    /**
+     * Renvoie vrai si le type e1 est une variable de type qui a le même nom que la variable de type e2 et faux sinon
+     * @param e1 le type
+     * @param e2 la variable de type
+     * @return vrai si le type e1 est une variable de type qui a le même nom que la variable de type e2 et faux sinon
+     */
     private static boolean TVarEtEgales(Type e1, TVar e2)
     {
         return (e1 instanceof TVar && ((TVar)e1).getV().equals(e2.getV()));
     }
             
+    /**
+     * Renvoie vrai si object est une instance d'au moins une d'une des classes dans classes (ou d'une de leur classe fille) et faux sinon
+     * @param object l'objet
+     * @param classes les classes
+     * @return vrai si object est et du type d'une des classes dans classes (ou d'une de leur classe fille) et faux sinon
+     */
     private static boolean instanceOf(Object object, Class... classes)
     {
-        boolean resultat = false;
         for(Class classe : classes)
         {
-            resultat |= classe.isInstance(object);
+            if(classe.isInstance(object))
+            {
+                return true;
+            }
         }                
-        return resultat;
+        return false;
     }
     
+    /**
+     * Renvoie la liste des équation de résolues correspondant à la liste listeEquation des équation à résoudre
+     * @param listeEquations la liste des équation de type à résoudre
+     * @return la liste des équation de résolues correspondant à la liste listeEquation des équation à résoudre
+     */
     public static LinkedList<EquationType> resoudreEquations(LinkedList<EquationType> listeEquations)
     {
         return resoudreEquations(listeEquations, 0);
     }
     
+    /**
+     * Renvoie la liste des équation de résolues correspondant à la liste listeEquation des équation à résoudre
+     * @param listeEquations la liste des équation de type à résoudre     * 
+     * @param nbAppelsSansModifierListe le nombre d'appels récursifs consécutif à cette méthode depuis la dernière modification de la liste listeEquations
+     * @return la liste des équation de résolues correspondant à la liste listeEquation des équation à résoudre
+     */
     private static LinkedList<EquationType> resoudreEquations(LinkedList<EquationType> listeEquations, int nbAppelsSansModifierListe)
     {
-        //System.out.println("/////////////////// ETAPE RESOLUTION"); listeEquations.forEach(System.out::println);
-        String messageMalType = "Le programme spécifié en entrée n'est pas correctement typé";
         if(listeEquations.isEmpty())
         {
             return new LinkedList<>();
@@ -47,13 +73,13 @@ public class SolveurEquationType {
                 return listeEquations;
             }
             EquationType teteListe = listeEquations.pop(); 
-            if(teteListe.getT2() instanceof TVar)
+            if(teteListe.getT2() instanceof TVar) // permet d'éviter d'avoir une instance de TVar dans t2 et une instance d'un autre type dans t1 (cela limite le nombre de cas à traiter)
             {
                 teteListe.echange();
             }
             Type t1Tete = teteListe.getT1();
             Type t2Tete = teteListe.getT2();
-            if(instanceOf(t1Tete, TInt.class, TBool.class, TUnit.class, TFloat.class, TNombre.class))
+            if(instanceOf(t1Tete, TInt.class, TBool.class, TUnit.class, TFloat.class, TNombre.class)) // si le premier type de l'équation en tête de liste est un type connu non composé d'autres types, il faut vérifier que le second type de l'équation en tête de liste est un type connu et unifiable avec le premier
             {      
                 // une equation de la forme ?1 = TNombre signifie ?1 = Int ou ?2 = Float (TInt et TFloat heritent de TNombre donc (new TInt()) instanceof TNombre est
                 // vrai mais (new TNombre()) instanceof TInt()) est faux. On utilise ce type d'equation pour l'operateur inférieur ou égal qui permet de comparer
@@ -64,33 +90,32 @@ public class SolveurEquationType {
                 }
                 else
                 {
-                    System.out.println(t1Tete+" = "+t2Tete);
-                    throw new MyCompilationException(messageMalType);
+                    throw new MyCompilationException(MESSAGE_PROGRAMME_MAL_TYPE);
                 }
             }
-            else if(t1Tete instanceof TFun)
+            else if(t1Tete instanceof TFun) 
             {
-                if(t2Tete instanceof TFun)
+                if(t2Tete instanceof TFun) // si les deux types de l'équation sont des type de fonctions il faut rajouter à la liste des équation deux équations indiquant que les types des paramètres et des résultats de ces deux fonctions doivent être égaux
                 {
                     listeEquations.addFirst(new EquationType(((TFun) t1Tete).getT1(), ((TFun) t2Tete).getT1()));
                     listeEquations.addFirst(new EquationType(((TFun) t1Tete).getT2(), ((TFun) t2Tete).getT2()));
                     return resoudreEquations(listeEquations, 0);
                 }
-                else
+                else // si le premier de l'équation en tête de liste est un type de fonction et pas le second, le programme est mal typé
                 {
-                    throw new MyCompilationException(messageMalType);
+                    throw new MyCompilationException(MESSAGE_PROGRAMME_MAL_TYPE);
                 }
             }
-            else if(t1Tete instanceof TTuple)
+            else if(t1Tete instanceof TTuple) 
             {
-                if(t2Tete instanceof TTuple)
+                if(t2Tete instanceof TTuple) // si les deux types de l'équation sont des type de tuples il faut rajouter à la liste des équation les équations indiquant que les types des composantes (dans l'ordre) de ces deux tuples doivent être égaux
                 {
                     List<Type> ts1 = ((TTuple) t1Tete).getTs();
                     List<Type> ts2 = ((TTuple) t2Tete).getTs();
                     int ts1Size = ts1.size();
-                    if(ts1Size != ts2.size())
+                    if(ts1Size != ts2.size()) // si les deux types de l'équation sont des types de tuples avec un nombre différents de composantes, le programme est mal typé
                     {
-                        throw new MyCompilationException(messageMalType);
+                        throw new MyCompilationException(MESSAGE_PROGRAMME_MAL_TYPE);
                     }
                     for(int i = 0 ; i < ts1Size ; i++)
                     {                        
@@ -98,37 +123,42 @@ public class SolveurEquationType {
                     }
                     return resoudreEquations(listeEquations, 0);
                 }
-                else
+                else  // si le premier de l'équation en tête de liste est un type de tuple et pas le second, le programme est mal typé
                 {
-                    throw new MyCompilationException(messageMalType);
+                    throw new MyCompilationException(MESSAGE_PROGRAMME_MAL_TYPE);
                 }
             }
             else if(t1Tete instanceof TArray)
             {
-                if(t2Tete instanceof TArray)
+                if(t2Tete instanceof TArray) // si les deux types de l'équation sont des type de tableaux il faut rajouter à la liste des équation l'équations indiquant que les types des éléments de ces deux tableaux doivent être égaux
                 {
                     listeEquations.addFirst(new EquationType(((TArray) t1Tete).getT(), ((TArray) t2Tete).getT()));
                     return resoudreEquations(listeEquations, 0);
                 }
-                else
+                else // si le premier de l'équation en tête de liste est un type de tableau et pas le second, le programme est mal typé
                 {
-                    throw new MyCompilationException(messageMalType);
+                    throw new MyCompilationException(MESSAGE_PROGRAMME_MAL_TYPE);
                 }
             }
             else // if(t1Tete instanceof TVar)
             {
                 TVar t1TeteTVar = (TVar)t1Tete;
-                System.out.println("t1TeteTVar : "+t1TeteTVar+", t2Tete : "+t2Tete);
+                 // si l'équation est de la forme a = b avec a une variable de type et b un type contenant a (comme Int->a), le programme est mal typé. Cela peut se
+                 // produire pour un programmme contenant une fonction se renvoyant elle-même et il est nécessaire de lancer une exception dans ce cas pour assurer
+                 // la terminaison de l'algorithme
                 if((!(t2Tete instanceof TVar) || !((TVar)t2Tete).getV().equals(t1TeteTVar.getV())) && contientCetteVariable(t2Tete, t1TeteTVar))
                 {
-                    throw new MyCompilationException(messageMalType);
+                    throw new MyCompilationException(MESSAGE_PROGRAMME_MAL_TYPE);
                 }
+                // remplacer les occurences du premier type de l'équation en tête de liste (une variable) par le deuxième type de l'équation en tête de liste
                 boolean aRemplace = false;
                 for(EquationType equation : listeEquations)
                 {
                     aRemplace |= remplacer(equation, t1TeteTVar, t2Tete);
                 }       
                 boolean contientVariable = contientVar(t2Tete);
+                // si le deuxieme type de l'équation est un type connu, il faut ajouter l'équation en tête de liste à la liste des équations résolues, sinon (si il contient une variable 
+                // comme dans (Int -> x), il faut remettre l'équation en tête de liste dans la liste des équations à résoudre
                 if(contientVariable)
                 {
                     listeEquations.addLast(teteListe);
@@ -143,6 +173,11 @@ public class SolveurEquationType {
         }
     }
     
+    /**
+     * Renvoie vrai si le type type contient une variable (comme x -> Int) et faux sinon
+     * @param type le type pour lequel on vérifie si il contient une variable
+     * @return vrai si le type type contient une variable et faux sinon
+     */
     private static boolean contientVar(Type type)
     {
         if(type instanceof TVar)
@@ -168,6 +203,12 @@ public class SolveurEquationType {
         }
     }
     
+    /**
+     * Renvoie vrai si le type type contient la variable var (comme dans var -> Int) et faux sinon
+     * @param type le type pour lequel on vérifie si il contient la variable var
+     * @param var la variable pour laquelle on vérifie si le type type la contient
+     * @return vrai si le type type contient la variable var et faux sinon
+     */
     private static boolean contientCetteVariable(Type type, TVar var)
     {
         if(type instanceof TVar && ((TVar)type).getV().equals(var.getV()))
@@ -193,6 +234,13 @@ public class SolveurEquationType {
         }
     }
     
+    /**
+     * Remplace les occurences de la variable de type variable dans l'équation equationDOrigine par le type valeurVariable et renvoie vrai si au moins une occurences a été remplacée et faux sinon
+     * @param equationDOrigine l'équation dans laquelle remplacer les occurrences de variable par valeurVariable
+     * @param variable la variable de type à remplacer
+     * @param valeurVariable le type par lequel remplacer la variable de type variable
+     * @return vrai si au moins une occurences de variable a été remplacée dans l'équation equationDOrigine et faux sinon
+     */
     private static boolean remplacer(EquationType equationDOrigine, TVar variable, Type valeurVariable)
     {
         boolean aRemplace = false;
@@ -219,6 +267,13 @@ public class SolveurEquationType {
         return aRemplace;
     }
     
+    /**
+     * Remplace les occurences de la variable de type variable dans le type typeDOrigine par le type valeurVariable et renvoie vrai si au moins une occurences a été remplacée et faux sinon
+     * @param equationDOrigine le type dans lequelle remplacer les occurrences de variable par valeurVariable
+     * @param variable la variable de type à remplacer
+     * @param valeurVariable le type par lequel remplacer la variable de type variable
+     * @return vrai si au moins une occurences de variable a été remplacée dans le type typeDOrigine et faux sinon
+     */
     private static boolean remplacer(Type typeDOrigine, TVar variable, Type valeurVariable)
     {
         boolean aRemplace = false;

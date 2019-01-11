@@ -12,17 +12,16 @@ MINCAMLC=java/mincamlc
 # TODO extends this script to run test in subdirectories
 # 
 
-
+red='\033[0;31m'
+normal='\033[0;0m'
 DOSSIER_RESULTAT="resultatsTests"
 
 function assertEquals()
 {
-    #echo "$1 == $2"
     if [ $1 -ne $2 ]
     then
 	testReussi=0
-	echo ""
-	echo "le test $fichierATester ECHOUE. Cause : $3"
+	printf "        --> le test $fichierATester ${red}ECHOUE${normal}. Cause : $3\n"
     fi
 }
 
@@ -31,7 +30,6 @@ function lancerTest()
 	fichierATester=$1
 	doitCompiler=0
 	testReussi=1
-	echo ""
 	echo "lancement de $fichierATester"
 	if [[ "$fichierATester" =~ .*/invalid/.*\.ml ]]
 	then
@@ -39,25 +37,20 @@ function lancerTest()
 	else
 		codeRetourAttendu=0
 	fi
-	#echo "codeRetourAttendu : $codeRetourAttendu "
 	if [[ "$fichierATester" =~ tests/syntax/.* ]]
 	then
-		#echo "syntax"
 		$MINCAMLC "$fichierATester" -p 2>/dev/null 1>/dev/null
 		assertEquals $codeRetourAttendu $? "parsing mincaml"
 		
 	elif [[ "$fichierATester" =~ tests/typechecking/.* ]]
 	then
-		#echo "typechecking"
 		$MINCAMLC "$fichierATester" -t 2>/dev/null 1>/dev/null
 		assertEquals $codeRetourAttendu $? "typechecking mincaml"
 	else
-		#echo "autres"
 		doitCompiler=1
 	fi
 	if [ $doitCompiler -eq 1 ]
 	then		
-		#echo "compilation"
 		fichierSansUnderscore=$(echo $fichierATester | tr "/" "_")
 		executableCaml="$DOSSIER_RESULTAT/$fichierSansUnderscore.executable"
 		traceCaml="$DOSSIER_RESULTAT/$fichierSansUnderscore.res"
@@ -102,11 +95,9 @@ fi
 mkdir "$DOSSIER_RESULTAT"
 nbTests=0
 nbTestsQuiPasse=0
-printf "Progression : "
 for test_case in tests/*/*/*.ml
 do
     lancerTest "$test_case"
-	printf "."
 done
 rm tests/*/*/*.cmi
 rm tests/*/*/*.cmo
@@ -114,6 +105,5 @@ echo ""
 echo "///////////////////////////////////////////////////////"
 echo "Nombre de tests qui passent : $nbTestsQuiPasse/$nbTests"
 echo "///////////////////////////////////////////////////////"
-
 
 

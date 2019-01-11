@@ -32,31 +32,7 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
         {
             return new Let(id, Type.gen(), e1, e2);
         }
-    }
-    
-    /*private static Exp insererLetRec(Id id, Type t, List<Id> args, Exp eFunDef, Exp exp)
-    {
-        if(eFunDef instanceof Let)
-        {
-            Let eFunDefLet = (Let)eFunDef;
-            return new Let(eFunDefLet.getId(), eFunDefLet.getT(), eFunDefLet.getE1(), insererLetRec(id, t, args, eFunDefLet.getE2(), exp));
-        }
-        else if(eFunDef instanceof LetRec)
-        {
-            LetRec eFunDefLetRec = (LetRec)eFunDef;
-            FunDef funDef = eFunDefLetRec.getFd();
-            return new LetRec(new FunDef(funDef.getId(), funDef.getType(), funDef.getArgs(), funDef.getE()), insererLetRec(id, t, args, eFunDefLetRec.getE(), exp));
-        }
-        else if(eFunDef instanceof LetTuple)
-        {
-            LetTuple eFunDefLetTuple = (LetTuple)eFunDef;
-            return new LetTuple(eFunDefLetTuple.getIds(), eFunDefLetTuple.getTs(), eFunDefLetTuple.getE1(), insererLetRec(id, t, args, eFunDefLetTuple.getE2(), exp));
-        }
-        else
-        {
-            return new LetRec(new FunDef(id, t, args, eFunDef), exp);
-        }
-    }*/        
+    }      
     
     private static Exp insererLetTuple(List<Id> ids, List<Type> ts, Exp e1, Exp e2)
     {
@@ -95,13 +71,5 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
         Exp e2 = e.getE2().accept(this);
         return insererLetTuple(e.getIds(), e.getTs(), e1, e2); 
     }
-    
-    /*@Override
-    public Exp visit(LetRec e) {
-        FunDef funDef = e.getFd();
-        Exp eFunDef = funDef.getE().accept(this);
-        Exp exp = e.getE().accept(this);
-        return insererLetRec(funDef.getId(), funDef.getType(), funDef.getArgs(), eFunDef, exp); 
-    }*/
 
 }

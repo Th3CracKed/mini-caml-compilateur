@@ -13,7 +13,7 @@ echo:
 	echo ${PRG}
 
 %.o : %.s libmincaml.S
-	${AS} -o $@ $^
+	${AS} -mfpu=vfpv2 -o $@ $^
 	
 
 %.arm : %.o
@@ -24,4 +24,3 @@ test: ${PRG}
 	  echo "*** Launching $$p"; \
 	  qemu-arm ./$$p ; \
 	done
-

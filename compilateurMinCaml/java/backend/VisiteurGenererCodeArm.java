@@ -18,7 +18,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     private static final int NUM_REGISTRE_OPERANDE2 = 5;
     private static final int NUM_REGISTRE_IMMEDIAT_INVALIDE = 7;
     private static final int NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR = 7;
-    //private static final int NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE = 8;
     
     private static final int NUM_REGISTRE_DESTINATION_FLOAT = 0;
     private static final int NUM_REGISTRE_OPERANDE1_FLOAT = 0;
@@ -40,10 +39,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     private static final int MAX_DECALAGE_INDICE_LOAD_STORE_FLOAT = (int) Math.pow(2, 8) - 1;
     private static final int MIN_DECALAGE_INDICE_LOAD_STORE_FLOAT = -MAX_DECALAGE_LOAD_STORE; // un bit est reserve pour le signe et la valeur absolue est codee sur 8 bit pour les decalages immédiats utilisés comme ceci : [Rn, #decalage]
 
-    //private static final int MIN_IMMEDIAT_SHIFTER_OPERAND = -(int) Math.pow(2, 7);
-    //private static final int MAX_IMMEDIAT_SHIFTER_OPERAND = -MIN_IMMEDIAT_SHIFTER_OPERAND-1; // toutes les valeurs sur 8 bits sont valides pour le shifter operand (entre -2^7 et 2^7-1)
-    
-    
     private final HashMap<String, EmplacementMemoire> emplacementsMemoire;
     private final Stack<EmplacementMemoire> emplacementDestination;
     private int numRegistre;
@@ -147,63 +142,10 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             // (l'opérateur >> fait un décalage arithmétique alors qu'il faudrait un décalage logique dans ce cas)
             if(valeurTournee >= valeurMin1Octet && valeurTournee <= valeurMax1Octet)
             {
-                /*System.out.println(String.format("i >> 24 : 0x%08X, i << 8 : 0x%08X", (valeur >> i), (valeur << (numDernierBit-i+1))));
-                System.out.println(i+"tournee : "+String.format("0x%08X", valeurTournee));*/
                 return true;
             }
         }
         return false;
-        // les valeurs immediates valides pour le shifter operand (dernier parametre des instructions comme add, sub, mov, cmp...) sont toutes les valeurs
-        // pouvant etre obtenues en faisant subit a une valeur sur 1 octet (entre -2^7 et 2^7-1) une rotation droite d'un nombre pair de rang
-        // par exemple 0xFF000000 est valide car il devient apres une rotation droite de 8 rangs 0x000000FF, qui est une valeur qui tient sur un octet 
-        // mais 0xFFFFFFFF est invalide (il ne peut pas tenir sur un octet) ni 0x1FE00000 (il ne pourrait tenir sur un octet qu'avec une rotation d'un nombre impair de rang)
-        // pour savoir si le nombre est valide, il faut qu'il ait au moins 25 bit à zéros consécutif
-        // ou 24 bits à zéro consécutifs avec en plus le numéro de bit du premier zéro (en partant de la gauche) pair (les bits sont numérotés de 0 à 31 de droites à gauche)
-        // Par exemple, la valeur 0x0FFFFFF0 à 8 bits à zéro consécutifs (4 au début et 4 à la fin) et le premier zéro à l'indice 28
-        /*int nbZerosConsecutifs = 0;
-        int indicePremierZero = 0;
-        int indicePremierZeroMax = 0;
-        int nbMaxZerosConsecutifs = 0;     
-        int nbZerosConsecutifsPoidsFaible = 0;
-        int nbZerosConsecutifsPoidsFort = 0;
-        int masque = 0b1;
-        int nbBitsEntier = Constantes.TAILLE_MOT_MEMOIRE*8;
-        for(int i = 0 ; i < nbBitsEntier ; i++)
-        {
-            if((valeur & (masque << i)) == 0)
-            {
-                nbZerosConsecutifs++;
-                if(nbZerosConsecutifs > nbMaxZerosConsecutifs)
-                {
-                    nbMaxZerosConsecutifs = nbZerosConsecutifs;
-                    indicePremierZeroMax = indicePremierZero;
-                }
-                if(nbMaxZerosConsecutifs == (i+1))
-                {
-                    nbZerosConsecutifsPoidsFaible = nbZerosConsecutifs;
-                }
-                else if(i == nbBitsEntier-1)
-                {
-                    nbZerosConsecutifsPoidsFort = nbZerosConsecutifs;
-                }
-            }
-            else
-            {
-                nbZerosConsecutifs = 0;
-                indicePremierZero = i+1;
-            }
-        }
-        int nbZerosPoidsFaibleEtFort = nbZerosConsecutifsPoidsFaible + nbZerosConsecutifsPoidsFort;
-        if(nbZerosPoidsFaibleEtFort > nbMaxZerosConsecutifs)
-        {
-            nbMaxZerosConsecutifs = nbZerosPoidsFaibleEtFort;
-            indicePremierZeroMax = nbBitsEntier - nbZerosPoidsFaibleEtFort - 1;
-        }
-        int nbZeroPourEtreValide = nbBitsEntier - 8; // 8 correspond au nombre de bits utilises pour stocker la valeur du shifter operand (valeur à laquelle on peut faire subir une rotation droite d'un nombre pair de rangs)
-        boolean resultat = (nbMaxZerosConsecutifs >= (nbZeroPourEtreValide+1) || (nbMaxZerosConsecutifs == nbZeroPourEtreValide && (indicePremierZeroMax%2==0)));
-        //System.out.println(String.format("le nombre 0x%08X (%d) est il un shifter operand valide ?"+nbMaxZerosConsecutifs+" "+resultat, valeur, valeur));
-        return resultat;*/
-        //return (valeur >= MIN_IMMEDIAT_SHIFTER_OPERAND && valeur <= MAX_IMMEDIAT_SHIFTER_OPERAND);
     }
     
     private void chargerValeurImmediateLDR(int numRegistre, int valeurDOrigine)
@@ -213,21 +155,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
     
     private void chargerValeurImmediateLDR(int valeurDOrigine) {
         chargerValeurImmediateLDR(NUM_REGISTRE_IMMEDIAT_INVALIDE, valeurDOrigine);
-        /*int masque = 0x000000FF;
-        boolean premiereInstruction = true;
-        final int numDernierOctet = Constantes.TAILLE_MOT_MEMOIRE-1;
-        String strRegistre = strReg(NUM_REGISTRE_IMMEDIAT_INVALIDE);
-        for (int i = 0; i <= numDernierOctet; i++) {
-            int valeurImm = (valeurDOrigine & (masque << i * 8));
-            if (valeurImm != 0 || (i == numDernierOctet && premiereInstruction)) {
-                if (premiereInstruction) {
-                    ecrireAvecIndentation("MOV " + strRegistre + ", #" + valeurImm + "\n");
-                    premiereInstruction = false;
-                } else {
-                    ecrireAvecIndentation("ADD " + strRegistre + ", " + strRegistre + ", #" + valeurImm + "\n");
-                }
-            }
-        }*/
     }
         
     private void visitOperande2IntWorker(VarOuIntAsml e) {
@@ -274,7 +201,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         {
             int valeur = ((IntAsml)e).getValeur();
             if (!estShifterOpImmediatValide(valeur)) { // si la valeur est trop grande pour être une valeur immediate, il faut la copier dans un registre
-                //strDecalage = strReg(NUM_REGISTRE_IMMEDIAT_INVALIDE);
                 chargerValeurImmediateLDR(valeur);
             }
         }
@@ -379,14 +305,10 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         }
         ecrire(":\n");
         augmenterNiveauIndentation();
-        /*if (e.estMainFunDef()) {
-            ajouterValeurASP(-TAILLE_ZONE_ALLOCATION_DYNAMIQUE);
-            ecrireAvecIndentation("MOV "+strReg(NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE)+", "+SP+"\n");
-        }*/
         changerEstInstructionMov(true);
         VisiteurTailleEnvironnement visTailleEnvironnement = new VisiteurTailleEnvironnement();
         e.accept(visTailleEnvironnement);
-        int tailleEnvironnement = visTailleEnvironnement.getTailleEnvironnement()/* + 4 * REGISTRE_SAUVEGARDES_APPELE.length*/;   
+        int tailleEnvironnement = visTailleEnvironnement.getTailleEnvironnement();   
         if(Constantes.REGISTRE_SAUVEGARDES_APPELE.length >= 1)
         {
             ecrireAvecIndentation("PUSH {");
@@ -396,7 +318,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                     ecrire(", ");
                 }
                 ecrire(strReg(Constantes.REGISTRE_SAUVEGARDES_APPELE[i]));
-                //loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
             }
             ecrire("}\n");
         }           
@@ -413,13 +334,11 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                     ecrire(", ");
                 }
                 ecrire(strReg(Constantes.REGISTRE_SAUVEGARDES_APPELE[i]));
-                //loadStoreWorker(new AdressePile((i+1) * Constantes.TAILLE_MOT_MEMOIRE), REGISTRE_SAUVEGARDES_APPELE[i], STR, Constantes.SP);
             }
             ecrire("}\n");
         }
         restaurerEstInstructionMov();
-        if (e.estMainFunDef()) {
-            //ajouterValeurASP(TAILLE_ZONE_ALLOCATION_DYNAMIQUE);            
+        if (e.estMainFunDef()) {      
             ecrireAvecIndentation("B "+Constantes.EXIT_ARM+"\n");
         }
         else
@@ -441,12 +360,11 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                     ecrire(", ");
                 }
                 ecrire(strReg(Constantes.REGISTRE_SAUVEGARDES_APPELANT[i]));
-                //loadStoreWorker(new AdressePile((tailleAEmpiler - i * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELANT[i], STR, Constantes.SP);
             }
             ecrire("}\n");
         }
         int nbParametres = e.getArguments().size();
-        int tailleParametresAEmpiler = (/*REGISTRE_SAUVEGARDES_APPELANT.length + */Math.max(0, (nbParametres - Constantes.REGISTRES_PARAMETRES.length))) * Constantes.TAILLE_MOT_MEMOIRE;
+        int tailleParametresAEmpiler = Math.max(0, (nbParametres - Constantes.REGISTRES_PARAMETRES.length)) * Constantes.TAILLE_MOT_MEMOIRE;
         ajouterValeurASP(-tailleParametresAEmpiler);
         for (int i = 0; i < nbParametres; i++) {   
             if(i == 0 && param0 != null)
@@ -460,9 +378,9 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                 AdresseMemoire adressePileParamPasseEnParam = null;
                 if(emplacementParam instanceof Registre && Arrays.<Integer>asList(Constantes.REGISTRES_PARAMETRES).contains(((Registre)emplacementParam).getNumeroRegistre()))
                 {
-                    // pour le programme let rec f x y = let rec g z t = z - t in g y x in f 1 2, g passe ses parametres dans l'ordre inverse, et si on ne gere pas ce cas, 
-                    // le code genere serait MOV R0, R1; MOV R1, R0 (qui est faux car cela correspond a l'appel g y y). Pour eviter cela lorsqu'une fonction passe ses
-                    // parametres a une autre, les valeurs des parametres sont chargee depuis la pile (elles sont presentes pour la sauvegarde du contexte par l'appelant
+                    // pour le programme let rec f x y = let rec g z t = z - t in g y x in f 1 2, g passe ses parametres a f en echangeant l'ordre des parametres, et si on ne
+                    // gere pas ce cas, le code genere serait MOV R0, R1; MOV R1, R0 (qui est faux car cela correspond a l'appel g y y). Pour eviter cela lorsqu'une fonction passe ses
+                    // parametres a une autre, les valeurs des parametres sont chargee depuis la pile (elles sont presentes pour la sauvegarde du contexte par l'appelant)
                     int indRegSauvegardeAppelant = Arrays.<Integer>asList(Constantes.REGISTRE_SAUVEGARDES_APPELANT).indexOf(((Registre)emplacementParam).getNumeroRegistre());
                     adressePileParamPasseEnParam = new AdresseMemoire(indRegSauvegardeAppelant * Constantes.TAILLE_MOT_MEMOIRE+tailleParametresAEmpiler);
                 }
@@ -493,7 +411,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                         int numReg = (emplacementParam instanceof Registre)?((Registre)emplacementParam).getNumeroRegistre():NUM_REGISTRE_OPERANDE1;
                         loadStoreWorker(new AdresseMemoire((nbParametres-1-i)*Constantes.TAILLE_MOT_MEMOIRE), numReg, STR, Constantes.SP);
                     }  
-                    //loadStoreWorker(new AdressePile((e.getArguments().size()-i-1) * Constantes.TAILLE_MOT_MEMOIRE), NUM_REGISTRE_OPERANDE1, STR, Constantes.SP);
                 }
             }                        
         }        
@@ -517,7 +434,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
         }
         ecrireAvecIndentation("\n");
         ecrireAvecIndentation("MOV " + strReg(NUM_REGISTRE_SAUVEGARDE_VALEUR_RETOUR) + ", " + strReg(Constantes.REGISTRE_VALEUR_RETOUR) + "\n");
-        //strDestination();        
         ajouterValeurASP(tailleParametresAEmpiler);
         if(Constantes.REGISTRE_SAUVEGARDES_APPELANT.length >= 1)
         {
@@ -528,7 +444,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
                     ecrire(", ");
                 }
                 ecrire(strReg(Constantes.REGISTRE_SAUVEGARDES_APPELANT[i]));
-                //loadStoreWorker(new AdressePile((tailleAEmpiler - i * Constantes.TAILLE_MOT_MEMOIRE)), REGISTRE_SAUVEGARDES_APPELANT[i], STR, Constantes.SP);
             }
             ecrire("}\n");
         }
@@ -562,7 +477,6 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
 
     @Override
     public void visit(IntAsml e) {
-        //chargerValeur(e, -1, -1);
         int valeur = e.getValeur();
         if (estInstructionMov()) {
             ecrireAvecIndentation("LDR ");
@@ -600,9 +514,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrireAvecIndentation("LDR R3, [R3]            @ charge le pointeur sur le debut de la prochaine zone a allouer dans r3 \n");
             ecrire(Constantes.CREATE_ARRAY_BOUCLE_ARM+":\n");
             ecrireAvecIndentation("STMIA R3!, {R1}            @ initialise le prochain mot memoire avec la valeur du deuxieme parametre de la fonction et ajoute 4 a r3 pour qu'il pointe sur le prochain mot memoire a initialiser\n");
-            //ecrireAvecIndentation("STR R1, [R3]            @ initialise le prochain mot memoire avec la valeur du deuxieme parametre de la fonction\n");
             ecrireAvecIndentation("SUB R2, R2, #"+Constantes.TAILLE_MOT_MEMOIRE+"            @ decremente la taille restante a initialiser de 4\n");
-            //ecrireAvecIndentation("ADD R3, R3, #"+Constantes.TAILLE_MOT_MEMOIRE+"            @ stocke l'adresse du prochain mot memoire a initialiser dans r3 \n");
             ecrireAvecIndentation("CMP R2, #0            @ compare la taille restante a initialiser a 0\n");
             ecrireAvecIndentation("BGT "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"            @ si la taille restante a initialiser est strictement positive, aller a "+Constantes.CREATE_ARRAY_BOUCLE_ARM+"\n");           
             ecrire(Constantes.NEW_ARM+":\n");
@@ -616,7 +528,7 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrire(LTORG+"\n\n");
             diminuerNiveauIndentation();
         }    
-        float[] coefficientsPolynome = new float[]{1.0f, -0.5f, 0.041666668f, -0.0013888889f, 2.4801588E-5f, -2.755732E-7f, 2.0876758E-9f}; // abs(cos(x)-(x^0*1.0+x^2*-0.5+x^4*0.041666668+x^6*-0.0013888889+x^8*2.4801588E-5+x^10*-2.755732E-7+x^12*2.0876758E-9)) <= 2^-23 si -pi/2 <= x <= pi/2 (2^-23 est la précision (plus petite valeur strictement positive) des flottants simple précision). Ce polynôme est la somme des monomes de degre inférieur ou égal à 12 du développement en série entière de cos(x)
+        float[] coefficientsPolynome = new float[]{1.0f, -0.5f, 0.041666668f, -0.0013888889f, 2.4801588E-5f, -2.755732E-7f, 2.0876758E-9f}; // abs(cos(x)-(x^0*1.0+x^2*-0.5+x^4*0.041666668+x^6*-0.0013888889+x^8*2.4801588E-5+x^10*-2.755732E-7+x^12*2.0876758E-9)) <= 2^-23 si -pi/2 <= x <= pi/2 (2^-23 est la précision (plus petite valeur strictement positive) des flottants simple précision). Ce polynôme est la somme des monomes de degre inférieurs ou égaux à 12 du développement en série entière de cos(x)
         if(optionsGenCodeArm.getUtiliseSinOuCos())
         {
             int decalageDernierElement = (coefficientsPolynome.length - 1)*Constantes.TAILLE_MOT_MEMOIRE;
@@ -648,12 +560,12 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrireAvecIndentation("FLDS S2, [R0]\n");
             ecrireAvecIndentation("FCMPS S0, S2\n"); 
             ecrireAvecIndentation("FMSTAT\n");
-            ecrireAvecIndentation("BLT "+Constantes.SIN_FIN_SI_2_ARM+"\n"); // sinFinSi2        
+            ecrireAvecIndentation("BLT "+Constantes.SIN_FIN_SI_2_ARM+"\n");      
             ecrireAvecIndentation("LDR R0, ="+Constantes.TROIS_PI_SUR_2_ARM+"\n");
             ecrireAvecIndentation("FLDS S2, [R0]\n");
             ecrireAvecIndentation("FCMPS S0, S2\n");    
             ecrireAvecIndentation("FMSTAT\n");
-            ecrireAvecIndentation("BLT "+Constantes.SIN_SINON_ARM+"\n"); // sinSinon1
+            ecrireAvecIndentation("BLT "+Constantes.SIN_SINON_ARM+"\n"); 
             ecrireAvecIndentation("FSUBS S0, S0, S1\n");
             ecrireAvecIndentation("B "+Constantes.SIN_FIN_SI_2_ARM+"\n");
             ecrire(Constantes.SIN_SINON_ARM+":\n");
@@ -670,50 +582,20 @@ public class VisiteurGenererCodeArm extends GenerateurDeCode implements Visiteur
             ecrireAvecIndentation("FMULS S0, S0, S0\n");
             ecrire(Constantes.SIN_TANT_QUE_ARM+":\n");
             ecrireAvecIndentation("CMP R2, R3\n");
-            ecrireAvecIndentation("BLT "+Constantes.SIN_FIN_TANT_QUE_ARM+"\n"); // sinFinTantQue
+            ecrireAvecIndentation("BLT "+Constantes.SIN_FIN_TANT_QUE_ARM+"\n"); 
             ecrireAvecIndentation("FMULS S1, S1, S0\n");
             ecrireAvecIndentation("FLDMIAS R2, {S2}\n");
             ecrireAvecIndentation("SUB R2, R2, #"+Constantes.TAILLE_MOT_MEMOIRE+"\n");
             ecrireAvecIndentation("FADDS S1, S1, S2\n");
-            ecrireAvecIndentation("B "+Constantes.SIN_TANT_QUE_ARM+"\n"); // sinTantQue        
+            ecrireAvecIndentation("B "+Constantes.SIN_TANT_QUE_ARM+"\n");    
             ecrire(Constantes.SIN_FIN_TANT_QUE_ARM+":\n");
             ecrireAvecIndentation("CMP R1, #0\n");
-            ecrireAvecIndentation("BEQ "+Constantes.SIN_FIN_SI_3_ARM+"\n");  // sinFinSi3  
+            ecrireAvecIndentation("BEQ "+Constantes.SIN_FIN_SI_3_ARM+"\n");  
             ecrireAvecIndentation("FNEGS S1, S1\n");
             ecrire(Constantes.SIN_FIN_SI_3_ARM+":\n");
             ecrireAvecIndentation("FMRS R0, S1\n");
             ecrireAvecIndentation("BX LR            @aller a l'adresse dans lr (instruction return)\n");
             ecrire(LTORG+"\n\n");
-            /*
-                FMSR S0, R0 @ S0 = R0
-    LDR R0, =_2pi          @ R0 = _2pi
-    FLDS S1, [R0]          @ S1 = *R0
-    FDIVS S2, S0, S1          @ S2 = S0/S1
-    FTOSIZS S2, S2          @ S2 = (int)S2
-    FSITOS S2, S2          @ S2 = (float)S2
-    FMULS S2, S2, S1          @ S2 *= S1
-    FSUBS S0, S0, S2          @ S0 -= S2
-    MOV R1, #0          @ R1 = 0
-    FCMPZS S0          @ comparer S0 a 0
-    BGT sinFinSi1          @ si S0 > 0 aller a sinFinSi1
-    FNEGS S0, S0          @ S0 *= -1
-sinFinSi1:
-    LDR R0, =_piSur2          @ R0 = _piSur2
-    FLDS S2, [R0]          @ S2 = *R0
-    FCMPS S0, S2          @ comparer S0 a S2
-    BMI sinFinSi2          @ si S0 < S2 aller a sinFinSi2
-    LDR R0, =_3PiSur2          @ R0 = _3piSur2
-    FLDS S2, [R0]          @ S2 = *R0
-    FCMPS S0, S2          @ comparer S0 a S2
-    BMI sinSinon          @ si S0 < S2 aller a sinSinon
-    FSUBS S0, S0, S1          @ S0 -= S1
-    B sinFinSi2          @ aller a sinFinSi2
-sinSinon:
-    LDR R0, =_pi          @ R0 = _pi
-    FLDS S1, [R0]          @ S1 = *R0
-    FSUBS S0, S1, S0          @ S0 = S1 - S0
-    MOV R1, #1          @ R1 = 1
-            */
             diminuerNiveauIndentation();
         }        
         for (FunDefAsml funDef : e.getFunDefs()) {
@@ -887,7 +769,6 @@ sinSinon:
     @Override
     public void visit(MemEcritureAsml e) {        
         String finInstruction = visitMemWorker(e);    
-        //System.out.println("valeur ecrite : "+emplacementVariable(e.getValeurEcrite().getIdString()));
         chargerValeur(e.getValeurEcrite(), NUM_REGISTRE_OPERANDE2, Constantes.FP);
         ecrireAvecIndentation(STR+" "+strVariable(e.getValeurEcrite(), NUM_REGISTRE_OPERANDE2)+finInstruction);        
         IntAsml.nil().accept(this); // stocke nil dans la destination (nil est represente par l'entier 0)
@@ -895,7 +776,7 @@ sinSinon:
 
     @Override
     public void visit(LetFloatAsml e) {
-        ecrire(e.getLabel()+": .single "+e.getValeur()+"\n"); // e.getValeur() ne peut pas avoir comme valeur Nan, +infini ou -infini (le constructeur de FloatMinCaml le vérifie)
+        ecrire(e.getLabel()+": .single "+e.getValeur()+"\n"); // e.getValeur() ne peut pas avoir comme valeur Nan, +infini ou -infini (le constructeur de LetFloatAsml le vérifie)
     }
     
     private void visitIfWorker(IfAsml e, String instBranchement)
@@ -903,19 +784,6 @@ sinSinon:
         String labelElse = Id.genIdStringAvecPrefixe("sinon");
         String labelEndIf = Id.genIdStringAvecPrefixe("finSi");
         ecrireAvecIndentation(instBranchement + " " + labelElse + "\n");
-        /*if(instBranchement.length == 1)
-        {
-            ecrireAvecIndentation(instBranchement[0] + " " + labelElse + "\n");
-        }
-        else
-        {
-            String labelIf = Id.genIdStringAvecPrefixe("si");
-            for(int i = 0 ; i < instBranchement.length ; i++)
-            {
-                ecrireAvecIndentation(instBranchement[i] + " " + labelIf + "\n");
-            }
-            ecrireAvecIndentation("B " + labelElse + "\n");
-        }*/
         e.getESiVrai().accept(this);
         ecrireAvecIndentation("B " + labelEndIf + "\n");
         ecrire(LTORG+"\n");

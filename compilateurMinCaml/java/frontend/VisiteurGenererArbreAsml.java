@@ -102,16 +102,7 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     @Override
     public NoeudAsml visit(Sub e) {
         DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
-        /*if(donneesOpBinaire.getE1() instanceof IntAsml)
-        {            
-            String idString = Id.genIdString();
-            VarAsml var = new VarAsml(idString);
-            return new LetAsml(idString, (IntAsml)donneesOpBinaire.getE1(), new SubAsml(var, (VarOuIntAsml)donneesOpBinaire.getE2()));
-        }
-        else
-        {*/
-            return new SubAsml((VarAsml)donneesOpBinaire.getE1(), (VarOuIntAsml)donneesOpBinaire.getE2());
-        //}
+        return new SubAsml((VarAsml)donneesOpBinaire.getE1(), (VarOuIntAsml)donneesOpBinaire.getE2());
     }
 
     @Override
@@ -155,35 +146,11 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
     @Override
     public NoeudAsml visit(Eq e) {
         return visitOperateurRelationnelWorker(e);
-        /*DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = recupererDonneesOperateurCommutatif(e);
-        VarAsml e1 = (VarAsml)donneesOpBinaire.getE1();
-        if(idStringVarFloats.contains(e1.getIdString()))
-        {
-            return new IfEqFloatAsml(e1, (VarAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-        }
-        else
-        {
-            return new IfEqIntAsml(e1, (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-        }*/
     }
 
     @Override
     public NoeudAsml visit(LE e) {
         return visitOperateurRelationnelWorker(e);
-        /*DonneesOperateurBinaire<NoeudAsml> donneesOpBinaire = new DonneesOperateurBinaire<>(e, this);
-        VarAsml e1 = (VarAsml)donneesOpBinaire.getE1();
-         if(idStringVarFloats.contains(e1.getIdString()))
-        {
-            return new IfLEFloatAsml(e1, (VarAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-        }
-        else if(donneesOpBinaire.getE1() instanceof IntAsml)
-        {   
-            return new IfGEIntAsml((VarAsml)donneesOpBinaire.getE2(), (VarOuIntAsml)donneesOpBinaire.getE1(), IntAsml.vrai(), IntAsml.faux());
-        }
-        else
-        {
-            return new IfLEIntAsml((VarAsml)donneesOpBinaire.getE1(), (VarOuIntAsml)donneesOpBinaire.getE2(), IntAsml.vrai(), IntAsml.faux());
-        }*/
     }
 
     @Override
@@ -238,22 +205,6 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
         {
             return new IfEqIntAsml((VarAsml)e.getE1().accept(this), IntAsml.vrai(), e2Accepte, e3Accepte);
         }
-        /*else  // (e1 instanceof Bool)
-        {
-            boolean boolE1 = ((Bool)e1).getValeur();
-            if(boolE1)
-            {                
-                return e2Accepte;
-            }
-            else
-            {                
-                return e3Accepte;
-            }
-        }*/
-        /*ExpAsml e1 = (ExpAsml)e.getE1().accept(this);
-        ExpAsml e2 = (ExpAsml)e.getE2().accept(this);
-        VarAsml var = new VarAsml(Id.genIdString());
-        return new LetAsml(var.getIdString(), e1, new IfEqIntAsml(var, IntAsml.vrai(), e1, e2));*/
     }
 
     @Override
@@ -314,7 +265,7 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
         }
         else
         {
-            return new LetAsml(idString, (ExpAsml)e1Accepte, e2Accepte); // ! estUnLabelFloat et estUnLabelDeFonction
+            return new LetAsml(idString, (ExpAsml)e1Accepte, e2Accepte);
         }
     }
 
@@ -347,7 +298,6 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
             eFunDef.accept(new VisiteurRenommage(idString, Constantes.SELF_ASML));
             VarAsml varClosure = new VarAsml(Id.genIdString());
             String idStringVarClosure = varClosure.getIdString();
-            //eFunDef.accept(new VisiteurRenommageCorpsFonctionsImbriquees(idString, idStringVarClosure));
             exp.accept(new VisiteurRenommage(idString, idStringVarClosure));
             expAccepte = (AsmtAsml)exp.accept(this);            
             expAccepte.accept(new VisiteurRenommageAsml(idString, idStringVarClosure));
@@ -363,29 +313,22 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
                 eFunDefAccepte.accept(new VisiteurRenommageAsml(env.get(i), nomVarLibreEFunDef));
                 if(Id.estUnLabel(env.get(i)))
                 {
-                    //expAccepte.accept(new VisiteurRenommageAsml(env.get(i), idStringVarClosure));
                     nomVarIntermediaire = Id.genIdString();
                     estUnLabel = true;
                 }
                 else
                 {
                     nomVarIntermediaire = env.get(i);
-                    //estUnLabel = false;
                 }
                 expAccepte = new LetAsml(Id.genIdString(), new MemEcritureAsml(new VarAsml(idStringVarClosure), new IntAsml(i+1), new VarAsml(nomVarIntermediaire)), expAccepte);
                 if(estUnLabel)
                 {
                     expAccepte = new LetAsml(nomVarIntermediaire, new VarAsml(env.get(i)), expAccepte);
                 } 
-                /*if(estUnLabel)
-                {                    
-                    expAccepte = new LetAsml(nomVarLibreExp, new VarAsml(env.get(i)), expAccepte);
-                }*/
                 eFunDefAccepte = new LetAsml(nomVarLibreEFunDef, new MemLectureAsml(new VarAsml(Constantes.SELF_ASML), new IntAsml(i+1)), eFunDefAccepte);
                 if(estUnLabel)
                 {
-                    System.out.println(env.get(i)+" RENOMME EN "+nomVarLibreEFunDef+"dans "+idString);
-                    eFunDefAccepte = (AsmtAsml)eFunDefAccepte.accept(new VisiteurRenommageCallAsml(env.get(i), nomVarLibreEFunDef)); // dans chaque fonction de nom f renommer f en %self partout ou f apparait ailleurs que comme premier element d'un call
+                    eFunDefAccepte = (AsmtAsml)eFunDefAccepte.accept(new VisiteurRenommageCallAsml(env.get(i), nomVarLibreEFunDef));
                 } 
             }
             String idVarAdresseFun = Id.genIdString();
@@ -421,17 +364,7 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
         {
             for(Exp argument : e.getEs())
             {
-                /*if(argument instanceof Var)
-                {*/
-                    //String idString = ((Var)argument).getId().getIdString();
-                    arguments.add((VarAsml)argument.accept(this));
-                /*}
-                else
-                {
-                    String nouvelId = Id.genIdString();
-                    arguments.add(new VarAsml(nouvelId));
-                    resultat = new LetAsml(nouvelId, (ExpAsml)argument.accept(this), (AsmtAsml)resultat);
-                }*/
+                arguments.add((VarAsml)argument.accept(this));
             }
         }        
         return resultat;
@@ -508,40 +441,6 @@ public class VisiteurGenererArbreAsml implements ObjVisitor<NoeudAsml> {
             }
         }
     }
-    
-    /*private class VisiteurRenommageCorpsFonctionsImbriquees extends VisiteurRenommage
-    {        
-        private boolean renommageActive;
-        
-        public VisiteurRenommageCorpsFonctionsImbriquees(String ancienNom, String nouveauNom)
-        {
-            super(ancienNom, nouveauNom);
-            setRenommageActive(false);
-        }    
-        
-        private void setRenommageActive(boolean renommageActive) {
-            this.renommageActive = renommageActive;
-        }
-        
-        @Override
-        public void visit(LetRec e)
-        {
-            boolean ancienRenommageActive = renommageActive;
-            setRenommageActive(true);
-            e.getFd().getE().accept(this);
-            setRenommageActive(ancienRenommageActive);
-            e.getE().accept(this);
-        }
-        
-        @Override
-        public void visit(Var e)
-        {
-            if(renommageActive)
-            {
-                super.visit(e);
-            }
-        }
-    }*/
     
     private class VisiteurRenommageAsml implements VisiteurAsml
     {

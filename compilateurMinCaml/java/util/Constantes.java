@@ -3,6 +3,9 @@ package util;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Classe contenant des constantes utilisées dans plusieurs des classes du projet.
+ */
 public class Constantes {
     public static int TAILLE_MOT_MEMOIRE = 4;
     
@@ -15,15 +18,7 @@ public class Constantes {
     public static final int LR = 14;
     public static final int PC = 15;   
     public static final int[] REGISTRE_SAUVEGARDES_APPELE = new int[]{4,5,6,7,8,9,10,FP};
-    public static final Integer[] REGISTRE_SAUVEGARDES_APPELANT = new Integer[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3/*, NUM_REGISTRE_PROCHAINE_ADRESSE_ALLOUEE*/, 12, Constantes.LR};
-
-    /*// numéros de registre contenant un flottant (S0,...)
-    public static final int REGISTRE_VALEUR_RETOUR_FLOAT = 0;
-    public static final Integer[] REGISTRES_PARAMETRES_FLOAT = new Integer[] {REGISTRE_VALEUR_RETOUR_FLOAT,1,2,3};    
-    public static final int[] REGISTRE_SAUVEGARDES_APPELE_FLOAT = new int[]{4,5,6,7,8,9,10,11,12,13,14,15};
-    public static final Integer[] REGISTRE_SAUVEGARDES_APPELANT_FLOAT = REGISTRES_PARAMETRES_FLOAT;    
-    public static final int NB_REGISTRES_SAUVEGARDE_APPELE = REGISTRE_SAUVEGARDES_APPELE.length+REGISTRE_SAUVEGARDES_APPELE_FLOAT.length;
-    public static final int NB_REGISTRES_SAUVEGARDE_APPELANT = REGISTRE_SAUVEGARDES_APPELANT.length+REGISTRE_SAUVEGARDES_APPELANT_FLOAT.length;*/
+    public static final Integer[] REGISTRE_SAUVEGARDES_APPELANT = new Integer[]{Constantes.REGISTRE_VALEUR_RETOUR, 1, 2, 3, 12, Constantes.LR};
     
     // fonction externes mincaml
     public static final String PRINT_INT_CAML = "print_int";
@@ -74,6 +69,9 @@ public class Constantes {
     public static final String COS_ARM = COS_ASML;
     public static final List<String> FONCTION_EXTERNES_ARM = Arrays.asList(PRINT_INT_ARM, PRINT_NEWLINE_ARM, CREATE_ARRAY_ARM, CREATE_FLOAT_ARRAY_ARM, SIN_ARM, COS_ARM );
     
+    /* autres labels ARM (labels présents dans libMinCaml.S) mais que l'utilisateur ne peut pas manipuler comme les fonctions externes. Par exemple,
+       min_caml_print_int appelle min_caml_print_string qui elle meme appelle stringlength mais le programmeur MinCaml ne peut pas appeler stringlength directement.
+       min_caml_exit ne peut pas non plus etre appelé explicitement mais est appelé automatique à la fin de chaque programme */
     public static final String EXIT_ARM = "min_caml_exit";
     public static final String NEW_ARM = DEBUT_LABEL_ASML+"allouer_memoire";
     public static final String CREATE_ARRAY_BOUCLE_ARM = "create_array_boucle";
@@ -89,10 +87,7 @@ public class Constantes {
     public static final String SIN_FIN_SI_3_ARM = "sinFinSi3";
     public static final String SIN_SINON_ARM = "sinSinon";
     public static final String SIN_TANT_QUE_ARM = "sinTantQue";
-    public static final String SIN_FIN_TANT_QUE_ARM = "sinFinTantQue";
-    // labels presents dans libMinCaml.S mais que l'utilisateur ne peut pas manipuler comme les fonctions externes. Par exemple,
-    // min_caml_print_int appelle min_caml_print_string qui elle meme appelle stringlength mais le programmeur MinCaml ne peut pas appeler stringlength directement.
-    // min_caml_exit ne peut pas non plus etre appele explicitement mais est appele automatique a la fin de chaque programme
+    public static final String SIN_FIN_TANT_QUE_ARM = "sinFinTantQue";    
     public static final List<String> LABELS_PRIVES_ARM = Arrays.asList(EXIT_ARM, CREATE_ARRAY_BOUCLE_ARM, ZONE_MEMOIRE_DYNAMIQUE_ARM,
         DEBUT_ZONE_MEMOIRE_DYNAMIQUE_LIBRE_ARM, PI_ARM, PI_SUR_2_ARM, TROIS_PI_SUR_2_ARM, DEUX_PI_ARM, COEFFICIENTS_POLYNOME_SIN_ARM, SIN_FIN_SI_1_ARM,
         SIN_FIN_SI_2_ARM, SIN_FIN_SI_3_ARM, SIN_SINON_ARM, SIN_TANT_QUE_ARM, SIN_FIN_TANT_QUE_ARM, "stringlength", "stringlength_loop", "stringlength_first", 
