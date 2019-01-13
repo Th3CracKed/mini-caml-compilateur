@@ -51,7 +51,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
     }
     
     /**
-     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie renvoie une liste contenant l'équation dont
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie une liste contenant l'équation dont
      * les types sont type et une instance de TUnit (le type attendu de nil doit être TUnit)
      * @param e le noeud à visiter
      * @return le résultat de l'application du visiteur courant (this) au noeud e
@@ -62,7 +62,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
     }
 
     /**
-     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie renvoie une liste contenant l'équation dont
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie une liste contenant l'équation dont
      * les types sont type et une instance de TUnit (le type attendu d'un booléen doit être TBool)
      * @param e le noeud à visiter
      * @return le résultat de l'application du visiteur courant (this) au noeud e
@@ -73,7 +73,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
     }
 
     /**
-     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie renvoie une liste contenant l'équation dont
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie une liste contenant l'équation dont
      * les types sont type et une instance de TUnit (le type attendu d'un entier doit être TInt)
      * @param e le noeud à visiter
      * @return le résultat de l'application du visiteur courant (this) au noeud e
@@ -84,7 +84,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
     }
 
     /**
-     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie renvoie une liste contenant l'équation dont
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie une liste contenant l'équation dont
      * les types sont type et une instance de TUnit (le type attendu d'un nombre flottant doit être TFloat)
      * @param e le noeud à visiter
      * @return le résultat de l'application du visiteur courant (this) au noeud e

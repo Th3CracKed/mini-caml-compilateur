@@ -6,8 +6,17 @@ import java.util.List;
 import visiteur.ObjVisitorExp;
 import visiteur.Visitor;
 
+/**
+ * Visiteur éliminant les définitions de variables (avec un noeud Let ou LetRec) et de fonctions non utilisées et telles que l'expression affectée à cette variable 
+ * n'a pas d'effet de bord (on considére que tout appel de fonction ou toute écriture dans un tableau a un effet de bord)
+ */
 public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
 
+    /**
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud.
+     * @param e le noeud à visiter
+     * @return le résultat de l'application du visiteur courant (this) au noeud e
+     */
     @Override
     public Exp visit(Let e) {
         Exp e2 = e.getE2().accept(this);
@@ -24,6 +33,11 @@ public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
         }
     }
     
+    /**
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud.
+     * @param e le noeud à visiter
+     * @return le résultat de l'application du visiteur courant (this) au noeud e
+     */
     @Override
     public Exp visit(LetRec e) {
         Exp exp = e.getE().accept(this);
@@ -39,6 +53,11 @@ public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
         }
     }
     
+    /**
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud.
+     * @param e le noeud à visiter
+     * @return le résultat de l'application du visiteur courant (this) au noeud e
+     */
     @Override
     public Exp visit(LetTuple e)
     {
@@ -57,18 +76,32 @@ public class VisiteurDefinitionsInutiles extends ObjVisitorExp {
         }
     }
     
+    /**
+     * Visiteur déterminant les variables utilisée dans un noeud mincaml
+     */
     private class VisiteurVariablesUtilisees implements Visitor {
 
         private final HashSet<String> variablesUtilisees;
 
+        /**
+        * Créé un visiteur déterminant les variables utilisée dans un noeud mincaml
+        */
         public VisiteurVariablesUtilisees() {
             variablesUtilisees = new HashSet<>();
         }
 
+        /**
+         * Renvoie l'ensemble des variables utilisées
+         * @return l'ensemble des variables utilisées
+         */
         public HashSet<String> getVariablesUtilisees() {
             return variablesUtilisees;
         }
 
+        /**
+        * Visite le noeud e. Dans ce cas, ajoute l'identifiant de e à la liste des identifiants de variables utilisées
+        * @param e le noeud à visiter
+        */
         @Override
         public void visit(Var e) {
             variablesUtilisees.add(e.getId().getIdString());

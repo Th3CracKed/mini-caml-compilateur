@@ -36,7 +36,7 @@ public class Environnement implements Cloneable
      * (par exemple si l'adresse dans FP contient une variable qui n'est plus utilisée, on peut l'utiliser pour une autre variable de la même manière que pour les registres
      * et cela évite de devoir augmenter la taille de l'environnement de la fonction). Sinon la taille de l'environnement de la fonction est augmenté et la nouvelle adresse
      * de l'environnement est renvoyé.
-     * @param idString
+     * @param idString l'identifiant de la variable à laquelle allouer un emplacement mémoire
      * @return un emplacement mémoire (un registre ou une adresse mémoire) non encore alloué
      */
     public EmplacementMemoire emplacementSuivant(String idString)

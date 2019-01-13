@@ -14,8 +14,8 @@ public class DonneesOperateurBinaire<E>
     /**
      * Créé une instance de DonneesOperateurBinaire contenant dans ses attributs e1 et e2 respectivement le résultat de l'application du visiteur visiteur 
      * sur le premier et le second opérande de l'opérateur
-     * @param e
-     * @param visiteur 
+     * @param e l'operateur binaire
+     * @param visiteur le visiteur
      */
     public DonneesOperateurBinaire(OperateurBinaire e, ObjVisitor<E> visiteur)
     {

@@ -8,8 +8,20 @@ import arbremincaml.Type;
 import java.util.List;
 import visiteur.ObjVisitorExp;
 
+/**
+ * Visiteur réalisant la réduction des instructions let imbriquées
+ */
 public class VisiteurLetImbriques extends ObjVisitorExp {
     
+    /**
+     * Renvoie un noeud let ayant la même sémantique que let id.getIdString() = e1 in e2 tel que e1 ne soit pas une instance de let, de letrec ou de lettuple (ni dans le noeud ni dans ses fils 
+     * qui sont des instances de let)
+     * @param id l'identifiant du noeud let à créer
+     * @param e1 l'expression à affecter à la variable déclarée
+     * @param e2 l'expression à droite du mot clé 
+     * @return un noeud let ayant la même sémantique que let id.getIdString() = e1 in e2 tel que e1 ne soit pas une instance de let (ni dans le noeud ni dans ses fils 
+     * qui sont des instances de let)
+     */
     private static Exp insererLet(Id id, Exp e1, Exp e2)
     {
         if(e1 instanceof Let)
@@ -34,6 +46,15 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
         }
     }      
     
+    /**
+     * Renvoie un noeud let ayant la même sémantique que let a = e1 in e2 (où a est le tuple des variables déclarées) tel que e1 ne soit pas une instance de let, de letrec ou de lettuple (ni dans le noeud ni dans ses fils 
+     * qui sont des instances de let)
+     * @param id l'identifiant du noeud let à créer
+     * @param e1 l'expression à affecter à la variable déclarée
+     * @param e2 l'expression à droite du mot clé 
+     * @return un noeud let ayant la même sémantique que let id.getIdString() = e1 in e2 tel que e1 ne soit pas une instance de let (ni dans le noeud ni dans ses fils 
+     * qui sont des instances de let)
+     */
     private static Exp insererLetTuple(List<Id> ids, List<Type> ts, Exp e1, Exp e2)
     {
         if(e1 instanceof Let)
@@ -57,6 +78,12 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
             return new LetTuple(ids, ts, e1, e2);
         }
     }
+    /**
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, appelle la méthode insererLet avec comme paramètres l'identifiant de e,
+     * et le résultats de l'application du visiteur à e1 et e2
+     * @param e le noeud à visiter
+     * @return le résultat de l'application du visiteur courant (this) au noeud e
+     */
     
     @Override
     public Exp visit(Let e) {
@@ -65,6 +92,12 @@ public class VisiteurLetImbriques extends ObjVisitorExp {
         return insererLet(e.getId(), e1, e2); 
     }
     
+    /**
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, appelle la méthode insererLetTuple avec comme paramètres 
+     * les identifiants des variables déclarées, les types des variables déclarée et le résultats de l'application du visiteur à e1 et e2
+     * @param e le noeud à visiter
+     * @return le résultat de l'application du visiteur courant (this) au noeud e
+     */
     @Override
     public Exp visit(LetTuple e) {
         Exp e1 = e.getE1().accept(this);

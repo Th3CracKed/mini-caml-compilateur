@@ -5,10 +5,16 @@ import java.util.HashMap;
 import util.Constantes;
 import visiteur.Visitor;
 
+/**
+ * Visiteur réalisant l'alpha-conversion d'un programme MinCaml.
+ */
 public class VisiteurAlphaConversion implements Visitor {
 
     private final HashMap<String, String> idsVariable;
     
+    /**
+    * Créé un visiteur réalisant l'alpha-conversion d'un programme MinCaml.
+    */
     public VisiteurAlphaConversion()
     {
         idsVariable = new HashMap<>();
@@ -16,41 +22,44 @@ public class VisiteurAlphaConversion implements Visitor {
         {
             idsVariable.put(nomFonction, nomFonction);
         }
-        for(String nomFonction : Constantes.MOTS_RESERVES_ASML)
-        {
-            idsVariable.put(nomFonction, nomFonction);
-        }
-        for(String nomFonction : Constantes.FONCTION_EXTERNES_ASML)
-        {
-            idsVariable.put(nomFonction, nomFonction);
-        }
-        for(String nomFonction : Constantes.FONCTION_EXTERNES_ARM)
-        {
-            idsVariable.put(nomFonction, nomFonction);
-        }
         idsVariable.put(Constantes.NOM_FONCTION_MAIN_ASML, Constantes.NOM_FONCTION_MAIN_ASML);
         idsVariable.put(Constantes.NOM_FONCTION_MAIN_ARM, Constantes.NOM_FONCTION_MAIN_ARM);
     }
     
+    /**
+     * Créé un visiteur réalisant l'alpha-conversion d'un programme MinCaml en renommant les variables dont les identifiants sont les clé de la table de hachage
+     * renommage par la valeur associée à cet identifiant dans la table
+     * @param renommage la table de hachage associant les anciens noms de variables aux nouveaux
+     */
     public VisiteurAlphaConversion(HashMap<String, String> renommage)
     {
         this();
         idsVariable.putAll(renommage);
     }
     
+    /**
+     * Visite le noeud e. Dans ce cas, visite e1, créé et associe un nouveau nom par lequel il faut remplacer celui de la variable déclarée, visite e2 puis restaure
+     * l'ancien nom (qui peut être null si il n'avait pas encore été rencontré) par lequel remplacer celui de la variable déclarée
+     * @param e le noeud à visiter
+     */
     @Override
     public void visit(Let e) {   
       Id id = e.getId();
       String ancienIdString = id.getIdString();
       String nouvelIdString = Id.genIdString();
       String ancienRenommage = idsVariable.get(ancienIdString);
-      id.setIdString(nouvelIdString);
-      idsVariable.put(ancienIdString, nouvelIdString);   
+      id.setIdString(nouvelIdString);  
       e.getE1().accept(this);
+      idsVariable.put(ancienIdString, nouvelIdString); 
       e.getE2().accept(this);
       idsVariable.put(ancienIdString, ancienRenommage);
     }
     
+    /**
+     * Visite le noeud e. Dans ce cas, réalise le même traitement que la méthode visit s'appliquant à des instances de Let mais en renommant plusieurs variables déclarées 
+     * (les paramètres de la fonction dans e1 et le nom de la fonction dans e1 et dans e2) au lieu d'une seule
+     * @param e le noeud à visiter
+     */
     @Override
     public void visit(LetRec e) {   
       FunDef funDef = e.getFd();
@@ -76,6 +85,11 @@ public class VisiteurAlphaConversion implements Visitor {
       idsVariable.put(ancienIdString, ancienRenommage);
     }
     
+    /**
+     * Visite le noeud e. Dans ce cas, réalise le même traitement que la méthode visit s'appliquant à des instances de Let mais en renommant plusieurs variables déclarées au lieu
+     * d'une seule
+     * @param e le noeud à visiter
+     */
     @Override
     public void visit(LetTuple e) {   
       HashMap<String, String> anciensIdsStringComposante = new HashMap<>();
@@ -93,6 +107,11 @@ public class VisiteurAlphaConversion implements Visitor {
       idsVariable.putAll(anciensIdsStringComposante);
     }
 
+    /**
+     * Visite le noeud e. Change l'identifiant de la variable par le nouvel identifiant associé à l'ancien dans la table de hachage des renommage (si l'ancien est présent
+     * dans cette table)
+     * @param e le noeud à visiter
+     */
     @Override
     public void visit(Var e){
         String nouvelId = idsVariable.get(e.getId().getIdString());

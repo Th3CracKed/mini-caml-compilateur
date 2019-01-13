@@ -262,7 +262,7 @@ public interface VisiteurAsml {
     /**
      * Applique le visiteur visiteur à l'opérande 1 comparé par le noeud if e (permet de factoriser le code des méthodes visit s'appliquant aux noeuds héritant de IfAsml)
      * @param e le noeud à visiter
-     * @param visiteur 
+     * @param visiteur le visiteur
      */
     public static void visitDebutIfWorker(IfAsml e, VisiteurAsml visiteur)
     {

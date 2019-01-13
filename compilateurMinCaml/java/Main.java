@@ -121,6 +121,7 @@ public class Main {
                          + "in.ml -asml -o out.asml : output ASML");
     }
 
+    
     /**
      * Lance le compilateur en lui indiquant l'option choisie (vérification du typage, compilation en ASML)
      * @param nomFichierEntree le nom du fichier en entrée à compiler
@@ -128,9 +129,8 @@ public class Main {
      * @param typeCheck booléen vrai si le compilateur doit s'arrêter après la vérification du typage
      * @param parseOnly booléen vrai si le compilateur doit s'arrêter après l'analyse syntaxique
      * @param outputASML booléen vrai si le compilateur doit compiler en ASML
-     * @throws FileNotFoundException 
      */
-    public static void compiler(String nomFichierEntree, String nomFichierSortie, boolean typeCheck, boolean parseOnly, boolean outputASML) throws FileNotFoundException {
+    public static void compiler(String nomFichierEntree, String nomFichierSortie, boolean typeCheck, boolean parseOnly, boolean outputASML) {
         Parser p = null;
         try {
             
@@ -156,8 +156,10 @@ public class Main {
                 expression = expression.accept(new VisiteurInlineExpansion());
                 expression = expression.accept(new VisiteurLetImbriques()); // l'inline expansion peut rajouter des let imbriqués, il faut donc appliquer VisiteurLetImbriques une deuxieme fois
                 expression = expression.accept(new VisiteurConstantFolding());
+                
+                
                 expression = expression.accept(new VisiteurDefinitionsInutiles());
-                VisiteurConversionClosure vClosure = new VisiteurConversionClosure();
+                VisiteurClosure vClosure = new VisiteurClosure();
                 expression.accept(vClosure);
                 // on a besoin d'indiquer au visiteur générant l'arbre ASML quelles sont les variables de type float pour qu'il détermine pour chaque noeud if si
                 // s'agit d'une comparaison d'entier ou de float. Il faut donc refaire l'etape du typage car l'arbre a ete modifie.
@@ -177,12 +179,22 @@ public class Main {
                 AsmtAsml corpsFunMain = (AsmtAsml) expression.accept(visGenAbAsml);              
                 NoeudAsml arbreAsml = new ProgrammeAsml(FunDefConcreteAsml.creerMainFunDef(corpsFunMain), visGenAbAsml.getFunDefs());
                 if (outputASML) {
-                    PrintStream fichierSortieASML = new PrintStream(nomFichierSortie);
+                    PrintStream fichierSortieASML = null;
+                    try {
+                        fichierSortieASML = new PrintStream(nomFichierSortie);
+                    } catch (FileNotFoundException e) {
+                        throw new MyCompilationException("Erreur lors de la création du fichier de sortie");
+                    }
                     arbreAsml.accept(new VisiteurGenererCodeAsml(fichierSortieASML));
                 } else {
                     VisiteurAllocationRegistre visAllocationRegistre = new VisiteurAllocationRegistreTreeScan(closures);
-                    arbreAsml.accept(visAllocationRegistre);                 
-                    PrintStream fichierSortieARM = new PrintStream(nomFichierSortie);
+                    arbreAsml.accept(visAllocationRegistre);  
+                    PrintStream fichierSortieARM = null;
+                    try {
+                        fichierSortieARM = new PrintStream(nomFichierSortie);
+                    } catch (FileNotFoundException e) {
+                        throw new MyCompilationException("Erreur lors de la création du fichier de sortie");
+                    }
                     VisiteurOptionsGenerationDeCode visOptionsGenCodeArm = new VisiteurOptionsGenerationDeCode();
                     arbreAsml.accept(visOptionsGenCodeArm);
                     arbreAsml.accept(new VisiteurGenererCodeArm(visAllocationRegistre.getEmplacementsVar(), fichierSortieARM, visOptionsGenCodeArm.getOptionsGenCodeArm()));

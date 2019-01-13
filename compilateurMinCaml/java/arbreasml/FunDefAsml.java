@@ -8,7 +8,7 @@ public abstract class FunDefAsml implements NoeudAsml {
 
     /**
      * Créé un noeud ASML FunDef avec pour label label
-     * @param label 
+     * @param label le label de la déclaration de fonction ou de nombre flottant
      */
     public FunDefAsml(String label)
     {

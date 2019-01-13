@@ -42,6 +42,7 @@ public abstract class VisiteurAllocationRegistre implements VisiteurAsml
      * Visite le noeud e. Dans ce cas, alloue pour le paramètre de numéro i (en numérotant les paramètres à partir de 0) le registre Ri si i 
      * est inférieur ou égal 3 et l'adresse FP+(n-i)*4 sinon (n est le nombre de paramètres). Les fonctions appelées avec call_closure ont un paramètre supplémentaire 
      * (implicite en ASML mais qu'il faut explicitement passer à la fonction en ARM) %self qu'il faut prendre en compte
+     * @param e le noeud à visiter
      */
     @Override
     public void visit(FunDefConcreteAsml e)

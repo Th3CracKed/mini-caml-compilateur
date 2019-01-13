@@ -9,7 +9,7 @@ public class OptionsGenerationCodeArm {
     private boolean utiliseNewOuCreateArray;
 
     /**
-     * Créé une instance de option génération indiquant qu'il ne faut pas générer de fonctions externes avec le fichier ARM généré
+     * Créé une instance de OptionsGenerationCodeArm indiquant qu'il ne faut pas générer de fonctions externes avec le fichier ARM généré
      */
     public OptionsGenerationCodeArm()
     {
