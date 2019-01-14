@@ -200,7 +200,7 @@ public class VisiteurGenererCodeAsml extends GenerateurDeCode implements Visiteu
      */
     @Override
     public void visit(FNegAsml e) {
-        visitNegBaseWorker(e, "neg");
+        visitNegBaseWorker(e, "fneg");
     }
 
     /**

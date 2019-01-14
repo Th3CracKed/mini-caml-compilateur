@@ -169,6 +169,16 @@ public class KNormVisitor extends ObjVisitorExp {
      * @return le résultat de l'application du visiteur courant (this) au noeud e
      */
     @Override
+    public Let visit(FNeg e) {
+       return visitOpUnaireWorker(e, FNeg::new); 
+    }
+    
+    /**
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie le résultat de la k-normalisation de e.
+     * @param e le noeud à visiter
+     * @return le résultat de l'application du visiteur courant (this) au noeud e
+     */
+    @Override
     public Let visit(FMul e) {
        return visitOpBinaireWorker(e, FMul::new); 
     }

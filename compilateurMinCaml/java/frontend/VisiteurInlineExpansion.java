@@ -77,7 +77,7 @@ public class VisiteurInlineExpansion extends ObjVisitorExp {
     }   
     
     /**
-     * Créé un visiteur permettant de calculer le nombre d'un arbre MinCaml. Les méthodes visit s'appliquant à un noeud terminal renvoie 1 et celles s'appliquant à un noeud
+     * Créé un visiteur permettant de calculer le nombre de noeuds d'un arbre MinCaml. Les méthodes visit s'appliquant à un noeud terminal renvoie 1 et celles s'appliquant à un noeud
      * non terminal renvoie 1 plus le nombre des noeuds de leurs fils.
      */
     private class VisiteurNbNoeudsArbre implements ObjVisitor<Integer>

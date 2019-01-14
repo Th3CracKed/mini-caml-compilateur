@@ -34,7 +34,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
      */
     private static boolean estValeurConstante(Exp valeur)
     {
-        return (valeur instanceof Valeur && !(valeur instanceof Tuple));
+        return valeur instanceof Int || valeur instanceof Bool || valeur instanceof Unit;
     }
     
     /**
@@ -49,7 +49,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
             Object val = valeurMinCaml.getValeur();
             VisiteurEffetDeBord vEffetDeBord = new VisiteurEffetDeBord();
             e.accept(vEffetDeBord);
-            if(!vEffetDeBord.getAUnEffetDeBord() && (!(val instanceof Integer)))
+            if(!vEffetDeBord.getAUnEffetDeBord() && (!(val instanceof Integer) || (Integer)val >= 0))
             {
                 return valeurMinCaml;
             }
@@ -138,7 +138,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
      */
     @Override
     public Exp visit(FNeg e){
-      return creerNoeudResultat(e, e);
+        return creerNoeudResultat(e, e);
     }
 
    /**
@@ -205,13 +205,23 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
      */
     @Override
     public Exp visit(Let e) {
-        Let resultat = (Let)super.visit(e);
-        Exp nouvelE1 = resultat.getE1();
+        Exp nouvelE1 = e.getE1().accept(new VisiteurCalculValeur());
+        Exp e1Accepte = e.getE1().accept(this);
         if(nouvelE1 instanceof Valeur)
         {
-            varConstante.put(e.getId().getIdString(), (Valeur)nouvelE1);
+            Valeur nouvelE1Valeur = (Valeur)nouvelE1;
+            varConstante.put(e.getId().getIdString(), nouvelE1Valeur);
+            Object val = nouvelE1Valeur.getValeur();
+            if(val instanceof Tuple || (val instanceof Integer && (Integer)val < 0) || (val instanceof Float && (Float)val < 0))
+            {
+                nouvelE1 = e1Accepte;
+            }
         }
-        return resultat; 
+        else
+        {
+            nouvelE1 = e1Accepte;
+        }
+        return new Let(e.getId(), Type.gen(), nouvelE1, e.getE2().accept(this)); 
     }
 
     /**
@@ -302,15 +312,13 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
     }
 
     /**
-     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie un noeud Tuple
-     * avec pour composantes le résultat de l'application du visiteur sur les composantes de e
+     * Visite le noeud e et renvoie le résultat de l'application du visiteur à ce noeud. Dans ce cas, renvoie e
      * @param e le noeud à visiter
      * @return le résultat de l'application du visiteur courant (this) au noeud e
      */
     @Override
     public Exp visit(Tuple e) {
-        Exp eAccepte = super.visit(e);
-        return creerNoeudResultat(e, eAccepte);
+        return e;
     }
 
     /**
@@ -513,7 +521,7 @@ public class VisiteurConstantFolding extends ObjVisitorExp {
         */
         @Override
         public Valeur visit(LE e) {
-            return visitOpRelationnelWorker(e, (a, b) -> (Integer) a <= (Integer) b);
+            return visitOpRelationnelWorker(e, (a, b) -> ((Comparable) a).compareTo((Comparable) b) <= 0); // on sait que le programme est bien typé donc a et b sont de même type (et ce type est soit Float soit Integer)
         }
 
         /**

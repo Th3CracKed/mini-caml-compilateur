@@ -350,7 +350,7 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
      */
     @Override
     public LinkedList<EquationType> visit(Let e) {
-        Type typeVariable = e.getT();
+        Type typeVariable = e.getT(); 
         String idString = e.getId().getIdString();
         changerType(typeVariable);
         LinkedList<EquationType> equationsE1 = e.getE1().accept(this);
@@ -468,7 +468,6 @@ public class VisiteurGenererEquationType implements ObjVisitor<LinkedList<Equati
      */
     @Override
     public LinkedList<EquationType> visit(LetTuple e) {
-        
         HashMap<String, Type> anciensTypesComposantes = new HashMap<>();
         List<Type> typesComposantes = new ArrayList<>();
         List<Id> idsComposantes = e.getIds();
